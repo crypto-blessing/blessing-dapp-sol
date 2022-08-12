@@ -19,7 +19,7 @@ import BlessingCard2 from 'src/views/cards/BlessingCard2'
 
 import { useEffect, useState } from "react"
 import { Divider, Slider } from '@mui/material'
-
+import { useWallet } from '@solana/wallet-adapter-react';
 
 const style = {
     position: 'absolute',
@@ -45,7 +45,10 @@ const Market = () => {
 
     const [alertMsg, setAlertMsg] = useState('');
     const [alertOpen, setAlertOpen] = useState(false);
-    const [alertSeverity, setAlertSeverity] = useState('info');   
+    const [alertSeverity, setAlertSeverity] = useState('info');
+    
+    const { publicKey } = useWallet();
+
     useEffect (() => {
         const { transactionHashes, callbackBlessingID, errorCode } = router.query
         if (!errorCode && transactionHashes) {
@@ -100,7 +103,7 @@ const Market = () => {
                     </Grid>
                     {item.items?.map((blessing) => (
                         <Grid key={blessing.image} item xs={12} md={2}>
-                            <BlessingCard2 blessing={blessing} />
+                            <BlessingCard2 blessing={blessing} publicKey={publicKey} />
                         </Grid>
                     ))}
                     

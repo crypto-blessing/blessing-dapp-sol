@@ -1,6 +1,5 @@
 import { ethers } from 'ethers';
 import {toLocaleDateFromBigInt} from 'src/@core/utils/date'
-import {simpleShowNear, cryptoBlessingAdreess} from 'src/@core/components/wallet/address'
 import {encode} from 'src/@core/utils/cypher'
 
 export const getBlessingTitle = (description) => {

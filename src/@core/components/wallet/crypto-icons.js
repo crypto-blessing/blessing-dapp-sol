@@ -13,6 +13,18 @@ const useStyles = makeStyles({
     }
 });
 
+export const SOL_ICON = () => {
+    const classes = useStyles();
+    
+    return (
+
+        <Icon classes={{root: classes.iconRoot}} fontSize="small">
+            <img className={classes.imageIcon} src="/images/cryptos/solana-sol-logo.svg" alt='SOL'/>
+        </Icon>
+
+    );
+}
+
 export const BUSD_ICON = () => {
     const classes = useStyles();
     

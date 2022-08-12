@@ -19,11 +19,11 @@ import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
 import Box from '@mui/material/Box'
 import Avatar from '@mui/material/Avatar';
-import {BUSD_ICON, CBT_ICON} from 'src/@core/components/wallet/crypto-icons'
+import {SOL_ICON, CBT_ICON} from 'src/@core/components/wallet/crypto-icons'
 
 import{ cbtBalance, nftBalance } from 'src/@core/configs/utils'
-
-
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import {LamportsToSOLFormat} from 'src/@core/components/wallet/utils'
 import { useEffect, useState } from "react"
 
 
@@ -50,32 +50,18 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 
 const Wallet = () => {
+    const { connection } = useConnection();
+    const { publicKey } = useWallet();
 
-    const [nearAmount, setNearAmount] = useState(0)
+    const [solAmount, setSolAmount] = useState(0)
     const [CBTAmount, setCBTAmount] = useState('')
     const [CBNFTItems, setCBNFTItems] = useState([])
 
-    const [nearConfig, setNearConfig] = useState(null)
-    const [currentUser, setCurrentUser] = useState('')
 
     async function fetchERC20Amount() {
         try {
-            setNearConfig(await getNearConfig())
-            setCurrentUser(await getCurrentUser())
-            if (currentUser) {
-                const walletConnection = await getWalletConnection()
-                    walletConnection.account().getAccountBalance().then(async (balance) => {
-                    setNearAmount(parseFloat(utils.format.formatNearAmount(balance.available)).toFixed(2))
-                })
-
-                const chainData = await cbtBalance(nearConfig, '{"account_id": "' + currentUser + '"}');
-                setCBTAmount(parseFloat(utils.format.formatNearAmount(chainData)).toFixed(2))
-                const nftData = await nftBalance(nearConfig, '{"account_id": "' + currentUser + '"}');
-                let images = []
-                nftData.map(item => {
-                    images.push(item.metadata.media)
-                })
-                setCBNFTItems(images)
+            if (publicKey) {
+                setSolAmount(await connection.getBalance(publicKey))
             }
         } catch (err) {
             console.log("Error: ", err)
@@ -85,7 +71,7 @@ const Wallet = () => {
     useEffect(() => {
         fetchERC20Amount()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUser])
+    }, [publicKey])
 
     return (
         <Grid container spacing={6}>
@@ -94,7 +80,7 @@ const Wallet = () => {
             </Grid>
             <Grid item xs={12} sm={6}>
                 <Card>
-                    <CardHeader title='NEP-141 Tokens' titleTypographyProps={{ variant: 'h6' }} />
+                    <CardHeader title='Tokens' titleTypographyProps={{ variant: 'h6' }} />
                     <TableContainer component={Paper}>
                         <Table sx={{ minWidth: 500 }} aria-label='customized table'>
                             <TableHead>
@@ -103,13 +89,13 @@ const Wallet = () => {
                                     <StyledTableCell align='right'>Balance</StyledTableCell>
                                 </TableRow>
                             </TableHead>
-                            { currentUser ?
+                            { publicKey ?
                                 <TableBody>
-                                <StyledTableRow key='NEAR'>
+                                <StyledTableRow key='SOL'>
                                     <StyledTableCell component='th' scope='row'>
-                                        <Chip variant="outlined" icon={<Avatar sx={{ width: 18, height: 18 }}>Ⓝ</Avatar>} label="NEAR" />
+                                        <Chip variant="outlined" icon={<SOL_ICON />} label="SOL" />
                                     </StyledTableCell>
-                                    <StyledTableCell align='right'>{nearAmount}</StyledTableCell>
+                                    <StyledTableCell align='right'>{LamportsToSOLFormat(solAmount)}</StyledTableCell>
                                 </StyledTableRow>
                                 <StyledTableRow key='CBT'>
                                     <StyledTableCell component='th' scope='row'>
@@ -128,16 +114,16 @@ const Wallet = () => {
                         </Table>
                     </TableContainer>
                 </Card>
-                <Card>
+                {/* <Card>
                     <CardContent>
                         <Typography variant='caption'>See my NEP-141 Tokens on <Link target='_blank' href={nearConfig?.walletUrl}>NEAR Wallet Page</Link></Typography>
                     </CardContent>
-                </Card>
+                </Card> */}
                 
             </Grid>
             <Grid item xs={12} sm={6}>
                 <Card>
-                    <CardHeader title='NEP-178 Tokens' titleTypographyProps={{ variant: 'h6' }} />
+                    <CardHeader title='Blessing NFTs' titleTypographyProps={{ variant: 'h6' }} />
                     <CardContent>
                         { CBNFTItems.length > 0 ?
                         <ImageList sx={{ width: 500, height: 450 }} cols={3} rowHeight={164}>
@@ -155,7 +141,7 @@ const Wallet = () => {
                         :
                         <Box sx={{ p: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                             <Typography  variant="overline" display="block" gutterBottom>
-                                {currentUser ? "You don't have claimed any CryptoBlessing NFT yet!" : 'Pls login to see your assets'}
+                                {publicKey ? "You don't have claimed any CryptoBlessing NFT yet!" : 'Pls login to see your assets'}
                             </Typography>
                         </Box>
                         }
@@ -164,11 +150,11 @@ const Wallet = () => {
                     
                 </Card>
 
-                <Card>
+                {/* <Card>
                     <CardContent>
                         <Typography variant='caption'>See my NEP-178 Tokens on <Link target='_blank' href={nearConfig?.walletUrl}>NEAR Collectibles Page</Link></Typography>
                     </CardContent>
-                </Card>
+                </Card> */}
             </Grid>
         </Grid>
     )

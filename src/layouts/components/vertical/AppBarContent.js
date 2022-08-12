@@ -63,7 +63,6 @@ const AppBarContent = props => {
   const [alertTitle, setAlertTitle] = useState('')
   const [alertMessage, setAlertMessage] = useState('')
 
-  const [currentUser, setCurrentUser] = useState('')
   const [nearConfig, setNearConfig] = useState({})
 
   async function connect() {
@@ -167,24 +166,7 @@ const AppBarContent = props => {
         </div>
       </Box>
       <Box className='actions-right' sx={{ display: 'flex', alignItems: 'center' }}>
-
-        {currentUser ? 
-        <ButtonGroup variant="contained" aria-label="outlined primary button group">
-          <Button variant="outlined">{'near-' + nearConfig.networkId}</Button>
-          <Button sx={{
-            textTransform: 'none'
-          }}>{currentUser}</Button>
-          <IconButton onClick={disconnect} color="primary" aria-label="add to shopping cart">
-            <LogoutIcon />
-          </IconButton>
-        </ButtonGroup>  
-        : 
-
-        // <Button onClick={connect} size='large' variant='outlined'>
-        //   Near Log in
-        // </Button>
         <WalletMultiButton />
-        }
         <Box sx={{ ml: 2 }} />
         <ModeToggler settings={settings} saveSettings={saveSettings} />
       </Box>

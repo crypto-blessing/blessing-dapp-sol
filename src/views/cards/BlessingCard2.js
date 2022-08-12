@@ -32,8 +32,10 @@ import IconButton, { IconButtonProps } from '@mui/material/IconButton';
 import IosShareIcon from '@mui/icons-material/IosShare';
 import sha256 from 'js-sha256';
 import BN from 'bn.js';
+import {SOL_ICON} from 'src/@core/components/wallet/crypto-icons'
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 
-
+import {LamportsToSOLFormat, simpleShowPublicKey} from 'src/@core/components/wallet/utils'
 import { green } from '@mui/material/colors';
 
 // ** Icons Imports
@@ -69,9 +71,8 @@ const StyledGrid = styled(Grid)(({ theme }) => ({
 }))
 
 const BlessingCard2 = (props) => {
-
-  const [currentUser, setCurrentUser] = useState(null)
-  const [nearConfig, setNearConfig] = useState(null)
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
 
   const [open, setOpen] = useState(false);
   const [tokenAmount, setTokenAmount] = useState(0);
@@ -127,15 +128,15 @@ const BlessingCard2 = (props) => {
   const handleBlessingCaption = (tokenAmount, claimQuantity, claimType) => {
     let payCaption = '', claimCaption = '';
     if (tokenAmount > 0 && claimQuantity > 0) {
-      let totalPay = (claimQuantity * props.blessing.near_price) + parseFloat(tokenAmount)
-      payCaption = `You will pay ${totalPay} ⓃNEAR. `
+      let totalPay = (claimQuantity * props.blessing.sol_price) + parseFloat(tokenAmount)
+      payCaption = `You will pay ${totalPay} SOL. `
     } else {
       payCaption = ''
     }
     if (payCaption !== '') {
       if (claimType > -1) {
         if (claimType === 0) {
-          claimCaption = `Your friends will claim ${(tokenAmount / claimQuantity).toFixed(2)}(tax in) ⓃNEAR and one more NFT. `
+          claimCaption = `Your friends will claim ${(tokenAmount / claimQuantity).toFixed(2)}(tax in) SOL and one more NFT. `
         } else if (claimType === 1) {
           claimCaption = `Your friends will claim a random amount and one more NFT.`
         }
@@ -147,23 +148,23 @@ const BlessingCard2 = (props) => {
   }
 
   const checkFormValidate = () => {
-    const totalAmount = claimQuantity * props.blessing.near_price + parseFloat(tokenAmount)
-    if (tokenAmount <= 0 || totalAmount > nearAmount) {
-      setAlertMsg('You have insufficient ⓃNEAR balance.')
+    const totalAmount = claimQuantity * props.blessing.sol_price + parseFloat(tokenAmount)
+    if (tokenAmount <= 0 || totalAmount > solAmount) {
+      setAlertMsg('You have insufficient SOL balance.')
       setAlertOpen(true);
       setAlertSeverity('error');
 
       return false
     }
     if (claimQuantity <= 0 || claimQuantity > 13) {
-      setAlertMsg('You only have up to 13 friends to collect your ⓃNEAR')
+      setAlertMsg('You only have up to 13 friends to collect your SOL')
       setAlertOpen(true);
       setAlertSeverity('error');
 
       return false
     }
     if (claimType === -1) {
-      setAlertMsg('Pls choose the way your friend will claim your ⓃNEAR')
+      setAlertMsg('Pls choose the way your friend will claim your SOL')
       setAlertOpen(true);
       setAlertSeverity('error');
 
@@ -202,7 +203,7 @@ const BlessingCard2 = (props) => {
 
       return
     }
-    const totalAmount = claimQuantity * props.blessing.near_price + parseFloat(tokenAmount)
+    const totalAmount = claimQuantity * props.blessing.sol_price + parseFloat(tokenAmount)
     const totalAmountInYocto = utils.format.parseNearAmount(totalAmount + "")
     
     // start to send blessing
@@ -263,19 +264,18 @@ const BlessingCard2 = (props) => {
     setAlertOpen(false)
   }
 
-  const [nearAmount, setNearAmount] = useState(0)
+  const [solAmount, setSolAmount] = useState(0)
 
-  async function fetchNearAmount() {
-    const walletConnection = await getWalletConnection()
-    walletConnection.account().getAccountBalance().then(async (balance) => {
-      setNearAmount(parseFloat(utils.format.formatNearAmount(balance.available)).toFixed(2))
-    })
+  async function fetchSolAmount() {
+    if (publicKey) {
+      setSolAmount(await connection.getBalance(publicKey))
+    }
       
   }
 
   useEffect(() => {
     if (open) {
-      fetchNearAmount()
+      fetchSolAmount()
     }
   }, [open])
 
@@ -292,16 +292,16 @@ const BlessingCard2 = (props) => {
           }}
         >
           <Typography variant='caption'>{props.blessing.title}</Typography>
-          <Chip size="small" variant="outlined" avatar={<Avatar>Ⓝ</Avatar>} color="secondary" label={props.blessing.near_price} />
+          <Chip size="small" variant="outlined" avatar={<SOL_ICON />} label={props.blessing.sol_price} />
         </Box>
       </CardContent>
-      {currentUser ?
+      {props.publicKey ?
         <Button size="small" onClick={handleOpen} variant='contained' sx={{ py: 2.5, width: '100%', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
           Send Blessing
         </Button>
       :
         <Button size="small" disabled variant='contained' sx={{ py: 2.5, width: '100%', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-          Near log in
+          Connect Wallet
         </Button>
       }
 
@@ -345,13 +345,13 @@ const BlessingCard2 = (props) => {
                   <Typography sx={{ fontWeight: 500, marginBottom: 3 }}>
                     Designer:{' '}
                     <Box component='span' sx={{ fontWeight: 'bold' }}>
-                      {props.blessing.near_owner}
+                      {simpleShowPublicKey(props.blessing.sol_owner)}
                     </Box>
                   </Typography>
                 </CardContent>
                 <CardActions className='card-action-dense'>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                  <Chip variant="outlined" avatar={<Avatar>Ⓝ</Avatar>} color="secondary" label={props.blessing.near_price} />
+                  <Chip variant="outlined" avatar={<SOL_ICON />} color="secondary" label={props.blessing.sol_price} />
                   </Box>
                 </CardActions>
               </Grid>
@@ -365,13 +365,13 @@ const BlessingCard2 = (props) => {
                     <TextField
                       onChange={handleTokenAmountChange}
                       fullWidth
-                      label={'How much ⓃNEAR do you want to send?(wallet: ' + nearAmount + ' ⓃNEAR)'}
+                      label={'How much SOL do you want to send?(wallet: ' + LamportsToSOLFormat(solAmount) + ' SOL)'}
                       placeholder='10'
                       type='number'
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position='start'>
-                            <Avatar sx={{ width: 20, height: 20 }}>Ⓝ</Avatar>
+                            <SOL_ICON />
                           </InputAdornment>
                         )
                       }}
@@ -396,7 +396,7 @@ const BlessingCard2 = (props) => {
                   </Grid>
                   <Grid item xs={12}>
                     <FormControl>
-                      <FormLabel id="demo-row-radio-buttons-group-label">The way they claim your ⓃNEAR?</FormLabel>
+                      <FormLabel id="demo-row-radio-buttons-group-label">The way they claim your SOL?</FormLabel>
                       <RadioGroup
                         onChange={handleClaimTypeChange}
                         row
