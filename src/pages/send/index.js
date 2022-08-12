@@ -33,6 +33,11 @@ import BN from 'bn.js';
 
 import { green } from '@mui/material/colors';
 
+import {SOL_ICON} from 'src/@core/components/wallet/crypto-icons'
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+
+import {LamportsToSOLFormat, simpleShowPublicKey} from 'src/@core/components/wallet/utils'
+
 // ** Icons Imports
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import {decode} from 'src/@core/utils/cypher'
@@ -71,10 +76,11 @@ const StyledGrid = styled(Grid)(({ theme }) => ({
 
 const BlessingSendPage = () => {
 
+    const { connection } = useConnection();
+    const { publicKey } = useWallet();
+
     const router = useRouter()
     const [tx, setTx] = useState(null)
-    const [nearConfig, setNearConfig] = useState(null)
-    const [currentUser, setCurrentUser] = useState('')
     useEffect (() => {
         const { blessing, transactionHashes, callbackBlessingID, errorCode } = router.query
         if (!errorCode && transactionHashes) {
@@ -148,14 +154,14 @@ const BlessingSendPage = () => {
         let payCaption = '', claimCaption = '';
         if (tokenAmount > 0 && claimQuantity > 0) {
         let totalPay = (claimQuantity * blessingInDB.price) + parseFloat(tokenAmount)
-        payCaption = `You will pay ${totalPay} ⓃNear. `
+        payCaption = `You will pay ${totalPay} SOL. `
         } else {
         payCaption = ''
         }
         if (payCaption !== '') {
         if (claimType > -1) {
             if (claimType === 0) {
-            claimCaption = `Your friends will claim ${(tokenAmount / claimQuantity).toFixed(2)}(tax in) ⓃNear and one more NFT. `
+            claimCaption = `Your friends will claim ${(tokenAmount / claimQuantity).toFixed(2)}(tax in) SOL and one more NFT. `
             } else if (claimType === 1) {
             claimCaption = `Your friends will claim a random amount and one more NFT.`
             }
@@ -167,23 +173,23 @@ const BlessingSendPage = () => {
     }
 
     const checkFormValidate = () => {
-        const totalAmount = claimQuantity * blessingInDB.near_price + parseFloat(tokenAmount)
-        if (tokenAmount <= 0 || totalAmount > nearAmount) {
-          setAlertMsg('You have insufficient ⓃNEAR balance.')
+        const totalAmount = claimQuantity * blessingInDB.sol_price + parseFloat(tokenAmount)
+        if (tokenAmount <= 0 || totalAmount > solAmount) {
+          setAlertMsg('You have insufficient SOL balance.')
           setAlertOpen(true);
           setAlertSeverity('error');
 
           return false
         }
         if (claimQuantity <= 0 || claimQuantity > 13) {
-          setAlertMsg('You only have up to 13 friends to collect your ⓃNEAR')
+          setAlertMsg('You only have up to 13 friends to collect your SOL')
           setAlertOpen(true);
           setAlertSeverity('error');
     
           return false
         }
         if (claimType === -1) {
-          setAlertMsg('Pls choose the way your friend will claim your ⓃNEAR')
+          setAlertMsg('Pls choose the way your friend will claim your SOL')
           setAlertOpen(true);
           setAlertSeverity('error');
     
@@ -222,7 +228,7 @@ const BlessingSendPage = () => {
             
             return
         }
-        const totalAmount = claimQuantity * blessingInDB.near_price + parseFloat(tokenAmount)
+        const totalAmount = claimQuantity * blessingInDB.sol_price + parseFloat(tokenAmount)
         const totalAmountInYocto = utils.format.parseNearAmount(totalAmount + "")
         
         // start to send blessing
@@ -277,7 +283,7 @@ const BlessingSendPage = () => {
 
     const copyClaimLink = () => {
         const privateKey = localStorage.getItem('my_blessing_claim_key_' + blessingID)
-        navigator.clipboard.writeText(`[CryptoBlessing] ${blessingInDB.title} | ${blessingInDB.description}. Claim your ⓃNear & blessing NFT here: https://near.cryptoblessing.app/claim?sender=${encode(currentUser)}&blessing=${encode(blessingID)}&key=${encode(privateKey)}`)
+        navigator.clipboard.writeText(`[CryptoBlessing] ${blessingInDB.title} | ${blessingInDB.description}. Claim your SOL & blessing NFT here: https://sol.cryptoblessing.app/claim?sender=${encode(publicKey)}&blessing=${encode(blessingID)}&key=${encode(privateKey)}`)
         setAlertMsg('Claim Link Copied.')
         setAlertOpen(true);
     }
@@ -293,19 +299,20 @@ const BlessingSendPage = () => {
         setAlertOpen(false)
     }
 
-    const [nearAmount, setNearAmount] = useState(0)
+    const [solAmount, setSolAmount] = useState(0)
 
-    async function fetchNearAmount() {
-        const walletConnection = await getWalletConnection()
-        walletConnection.account().getAccountBalance().then(async (balance) => {
-          setNearAmount(parseFloat(utils.format.formatNearAmount(balance.available)).toFixed(2))
-        })
+    async function fetchSolAmount() {
+        if (publicKey) {
+          setSolAmount(await connection.getBalance(publicKey))
+        }
           
-    }
-
-    useEffect(() => {
-        fetchNearAmount()
-    }, [])
+      }
+    
+      useEffect(() => {
+        if (open) {
+          fetchSolAmount()
+        }
+      }, [open])
 
 
     return (
@@ -340,13 +347,13 @@ const BlessingSendPage = () => {
                         <Typography sx={{ fontWeight: 500, marginBottom: 3 }}>
                             Designer:{' '}
                             <Box component='span' sx={{ fontWeight: 'bold' }}>
-                            {blessingInDB.near_owner}
+                            {simpleShowPublicKey(blessingInDB.sol_owner)}
                             </Box>
                         </Typography>
                         </CardContent>
                         <CardActions className='card-action-dense'>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <Chip variant="outlined" avatar={<Avatar>Ⓝ</Avatar>} color="secondary" label={blessingInDB.near_price} />
+                            <Chip variant="outlined" avatar={<SOL_ICON />} label={blessingInDB.sol_price} />
                         </Box>
                         </CardActions>
                     </Grid>
@@ -360,13 +367,13 @@ const BlessingSendPage = () => {
                             <TextField
                                 onChange={handleTokenAmountChange}
                                 fullWidth
-                                label={'How much ⓃNEAR do you want to send?(wallet: ' + nearAmount + ' ⓃNEAR)'}
+                                label={'How much SOL do you want to send?(wallet: ' + solAmount + ' SOL)'}
                                 placeholder='10'
                                 type='number'
                                 InputProps={{
                                     startAdornment: (
                                     <InputAdornment position='start'>
-                                        <Avatar sx={{ width: 20, height: 20 }}>Ⓝ</Avatar>
+                                        <SOL_ICON />
                                     </InputAdornment>
                                     )
                                 }}
@@ -391,7 +398,7 @@ const BlessingSendPage = () => {
                         </Grid>
                         <Grid item xs={12}>
                             <FormControl>
-                            <FormLabel id="demo-row-radio-buttons-group-label">The way they claim your ⓃNear?</FormLabel>
+                            <FormLabel id="demo-row-radio-buttons-group-label">The way they claim your SOL?</FormLabel>
                             <RadioGroup
                                 onChange={handleClaimTypeChange}
                                 row
@@ -412,19 +419,15 @@ const BlessingSendPage = () => {
                     </CardContent>
                     <Divider sx={{ margin: 0 }} />
                     <CardActions
-                    sx={{
-                    gap: 5,
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                    }}
                     >
-                    <Button onClick={handleClose} size='large' color='secondary' variant='outlined'>
+                    {/* <Button onClick={handleClose} size='large' color='secondary' variant='outlined'>
                         Cancel
-                    </Button>
-                    <Box sx={{ m: 1, position: 'relative' }}>
-                        <Button onClick={submitSendBlessing} disabled={sending} size='large' type='submit' sx={{ mr: 2 }} variant='contained'>
+                    </Button> */}
+                    <Box 
+                    sx={{ py: 2.5, width: '100%', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
+                    >
+                        <Button fullWidth
+                        onClick={submitSendBlessing} disabled={!publicKey || sending} size='large' type='submit' sx={{ mr: 2 }} variant='contained'>
                         {sending ? 'Waiting for send transaction...' : 'Send Blessing'}
                         </Button>
                         {sending && (
@@ -468,9 +471,9 @@ const BlessingSendPage = () => {
                             FYI, only use this claim link can claim your blessing!
                         </Typography>
                         <br />
-                        <Typography variant='caption'>
+                        {/* <Typography variant='caption'>
                             <Link target='_blank' href={nearConfig?.explorerUrl + '/transactions/' + tx}>See the transaction on Near</Link>
-                        </Typography>
+                        </Typography> */}
                     </CardContent>
                     <CardActions
                     sx={{
