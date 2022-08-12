@@ -77,3 +77,4 @@ yarn-error.log*
 contract/target
 contract/res
 Cargo.lock
+test-ledger
