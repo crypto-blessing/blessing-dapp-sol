@@ -11,9 +11,25 @@ describe('crypto-blessing', () => {
     const provider = anchor.Provider.env()
     anchor.setProvider(provider);
     const program = anchor.workspace.SolProgram;
+    const sender = program.provider.wallet.publicKey
+    const admin_param = anchor.web3.Keypair.generate()
+
+    it("Is initialized!", async () => {
+        // Add your test here.
+        
+
+        const tx = await program.rpc.initialize({
+            accounts: {
+                adminParam: admin_param.publicKey,
+                owner: sender,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+            signers: [admin_param],
+        });
+        console.log("Your transaction signature", tx);
+      });
 
     it('can send a new blessing', async () => {
-        const sender = program.provider.wallet.publicKey
         const blessing_owner = anchor.web3.Keypair.generate()
         const blessing = anchor.web3.Keypair.generate();
 
@@ -26,6 +42,7 @@ describe('crypto-blessing', () => {
         {
             accounts: {
                 blessing: blessing.publicKey,
+                adminParam: admin_param.publicKey,
                 owner: sender,
                 systemProgram: anchor.web3.SystemProgram.programId,
             },

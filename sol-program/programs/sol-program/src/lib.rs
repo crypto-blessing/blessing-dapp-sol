@@ -13,7 +13,15 @@ pub mod sol_program {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Ok(())
+        instructions::op_admin_param::initialize(ctx)
+    }
+
+    pub fn update_admin_param(ctx: Context<UpdateAdminParam>,
+        cbt_reward_ratio: u16,
+        cbt_reward_max: u64,
+        claim_tax_rate: u16,
+    ) -> Result<()> {
+        instructions::op_admin_param::update_admin_param(ctx, cbt_reward_ratio, cbt_reward_max, claim_tax_rate)
     }
 
     pub fn add_blessing(ctx: Context<AddBlessing>, 
@@ -43,5 +51,4 @@ pub mod sol_program {
     }
 }
 
-#[derive(Accounts)]
-pub struct Initialize {}
+

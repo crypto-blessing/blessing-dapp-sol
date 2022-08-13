@@ -3,11 +3,15 @@ seeds = false
 [programs.localnet]
 sol_program = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 
+[programs.devnet]
+sol_program = "GW1WJU2kC69igFrFmNttA9UQNhDasb856ssEma6J786P"
+
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
 cluster = "localnet"
+# cluster = "devnet"
 wallet = "/Users/quyang/.config/solana/id.json"
 
 [scripts]

@@ -20,4 +20,13 @@ pub enum CryptoBlessingError {
 
     #[msg("claime quantity > 0 && <= 13.")]
     ClaimeQuantityGT0LTE13,
+
+    #[msg("Admin Param already inited.")]
+    AdminParamAlreadyInited,
+
+    #[msg("Admin Param not inited.")]
+    AdminParamNotInited,
+
+    #[msg("Admin Param owner not match.")]
+    AdminCanDoThis,
 }
