@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import {toLocaleDateFromBigInt} from 'src/@core/utils/date'
 import {encode} from 'src/@core/utils/cypher'
+import {LamportsToSOLFormat} from 'src/@core/components/wallet/utils'
 
 export const getBlessingTitle = (description) => {
     if (description != undefined && description.length > 0) {
@@ -24,19 +25,20 @@ export const transBlesingsFromWalletBlessings = (sender, blessings) => {
     console.log('transBlesingsFromWalletBlessings', blessings)
     let newBlessings = []
     blessings.forEach(blessing => {
+        
         newBlessings.push({
-            code: blessing.blessing_id,
-            blessing: blessing.blessing_image,
-            time: toLocaleDateFromBigInt(blessing.send_timestamp/1000000000),
-            amount: parseFloat(utils.format.formatNearAmount(blessing.token_amount)).toFixed(2),
-            quantity: blessing.claim_quantity.toString(),
-            type: blessing.claim_type,
-            progress: '/claim?sender=' + encode(sender) + '&blessing=' + encode(blessing.blessing_id),
-            revoked: blessing.revoked
+            code: blessing.publicKey,
+            blessing: blessing.account.blessingImg,
+            time: toLocaleDateFromBigInt(blessing.account.sendTimestamp),
+            amount: LamportsToSOLFormat(blessing.account.tokenAmount),
+            quantity: blessing.account.claimQuantity.toString(),
+            type: blessing.account.claimType.random ? 'Random' : 'Average',
+            progress: '/claim?sender=' + encode(sender.toBase58()) + '&blessing=' + encode(blessing.publicKey.toBase58()),
+            revoked: blessing.account.revoked
         })
     })
 
-    return newBlessings.reverse()
+    return newBlessings
 }
 
 export const transClaimBlesingsFromWalletBlessings = (blessings) => {

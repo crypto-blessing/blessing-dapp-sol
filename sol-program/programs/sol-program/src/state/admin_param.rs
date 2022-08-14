@@ -22,6 +22,7 @@ impl AdminParam {
         self.cbt_reward_ratio = cbt_reward_ratio;
         self.cbt_reward_max = cbt_reward_max;
         self.claim_tax_rate = claim_tax_rate;
+        self.inited = true;
         Ok(())
     }
 }

@@ -10,9 +10,14 @@ sol_program = "GW1WJU2kC69igFrFmNttA9UQNhDasb856ssEma6J786P"
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "localnet"
-# cluster = "devnet"
+# cluster = "localnet"
+cluster = "devnet"
 wallet = "/Users/quyang/.config/solana/id.json"
 
 [scripts]
 test = "yarn run mocha -t 1000000 tests/"
+init_admin_param = "yarn run mocha -t 1000000 scripts/init_admin_param.js"
+update_admin_param = "yarn run mocha -t 1000000 scripts/update_admin_param.js"
+add_blessing = "yarn run mocha -t 1000000 scripts/add_blessing.js"
+update_blessing = "yarn run mocha -t 1000000 scripts/update_blessing.js"
+before_test = "yarn run mocha -t 1000000 scripts/before_test.js"

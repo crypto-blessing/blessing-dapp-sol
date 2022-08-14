@@ -6,7 +6,7 @@ pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
     let owner: &Signer = &ctx.accounts.owner;
     let admin_param = &ctx.accounts.admin_param;
     require!(admin_param.inited == false, CryptoBlessingError::AdminParamAlreadyInited);
-    ctx.accounts.admin_param.save(*owner.key, 5, 0, 10)
+    ctx.accounts.admin_param.save(*owner.key, 5, 100 * 1000000000, 10)
 }
 
 pub fn update_admin_param(ctx: Context<UpdateAdminParam>,

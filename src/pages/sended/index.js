@@ -16,14 +16,24 @@ import Chip from '@mui/material/Chip'
 import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-
-import{ viewMethodOnContract } from 'src/@core/configs/utils'
-
-
-import {transBlesingsFromWalletBlessings} from 'src/@core/utils/blessing.js'
-
-
 import { useEffect, useState } from "react"
+import { useWallet, useAnchorWallet, useConnection } from '@solana/wallet-adapter-react';
+
+import {LamportsToSOLFormat, simpleShowPublicKey} from 'src/@core/components/wallet/utils'
+import {transBlesingsFromWalletBlessings} from 'src/@core/utils/blessing.js'
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
+import kp from 'src/program/admin_param_keypair.json'
+import idl from 'src/program/idl.json'
+import { AnchorProvider, Program } from '@project-serum/anchor'
+import bs58 from 'bs58'
+
+const anchor = require("@project-serum/anchor")
+
+const preflightCommitment = 'processed'
+const commitment = 'processed'
+const programID = new PublicKey(idl.metadata.address)
+
+
 
 
 const columns = [
@@ -36,6 +46,10 @@ const columns = [
 ]
 
 const BlessingSended = () => {
+    const { connection } = useConnection();
+    const { publicKey } = useWallet();
+    const anchorWallet =  useAnchorWallet()
+
 
     // ** States
     const [page, setPage] = useState(0)
@@ -54,11 +68,34 @@ const BlessingSended = () => {
         setPage(0)
     }
 
+    async function fetchMySendedBlessings() {
+        if (publicKey) {
+            const provider = new AnchorProvider(connection, anchorWallet, { preflightCommitment, commitment })
+            const program = new Program(idl, programID, provider)
+
+            let sender_blessings = await program.account.senderBlessing.all([
+                {
+                memcmp: {
+                    offset: 8, // Discriminator.
+                    bytes: publicKey.toBase58(),
+                }
+                }
+            ]);
+            console.log('blessings', sender_blessings)
+            setBlessings(transBlesingsFromWalletBlessings(publicKey, sender_blessings))
+        }    
+    }
+
+    useEffect(() => {
+        fetchMySendedBlessings()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [publicKey])
+
     return (
         <Grid container spacing={6}>
             <Grid item xs={12}>
                 <Typography variant='h5'>
-                Blessing Sended History
+                Blessing Sent History
                 </Typography>
                 <Typography variant='body2'>Do you need help? You can join our telegram group: 
                     <Link target='_blank' href="https://t.me/crypto_blessing_eng" underline="always">Find admin in telegram</Link>

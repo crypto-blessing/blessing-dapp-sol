@@ -8,7 +8,6 @@ import Button from '@mui/material/Button'
 import CardMedia from '@mui/material/CardMedia'
 import Typography from '@mui/material/Typography'
 import CardContent from '@mui/material/CardContent'
-import Icon from '@material-ui/core/Icon';
 import Modal from '@mui/material/Modal';
 import Grid from '@mui/material/Grid'
 import TextField from '@mui/material/TextField'
@@ -26,14 +25,13 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Link from '@mui/material/Link';
 import Chip from '@mui/material/Chip';
-import Avatar from '@mui/material/Avatar';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton, { IconButtonProps } from '@mui/material/IconButton';
 import IosShareIcon from '@mui/icons-material/IosShare';
 import sha256 from 'js-sha256';
 import BN from 'bn.js';
 import {SOL_ICON} from 'src/@core/components/wallet/crypto-icons'
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useWallet, useAnchorWallet, useConnection } from '@solana/wallet-adapter-react';
 
 import {LamportsToSOLFormat, simpleShowPublicKey} from 'src/@core/components/wallet/utils'
 import { green } from '@mui/material/colors';
@@ -42,7 +40,17 @@ import { green } from '@mui/material/colors';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import {encode} from 'src/@core/utils/cypher'
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
+import kp from 'src/program/admin_param_keypair.json'
+import idl from 'src/program/idl.json'
+import { AnchorProvider, Program } from '@project-serum/anchor'
+import bs58 from 'bs58'
 
+const anchor = require("@project-serum/anchor")
+
+const preflightCommitment = 'processed'
+const commitment = 'processed'
+const programID = new PublicKey(idl.metadata.address)
 
 const style = {
   position: 'absolute',
@@ -73,6 +81,7 @@ const StyledGrid = styled(Grid)(({ theme }) => ({
 const BlessingCard2 = (props) => {
   const { connection } = useConnection();
   const { publicKey } = useWallet();
+  const anchorWallet =  useAnchorWallet()
 
   const [open, setOpen] = useState(false);
   const [tokenAmount, setTokenAmount] = useState(0);
@@ -87,9 +96,23 @@ const BlessingCard2 = (props) => {
 
 
   const [sending, setSending] = useState(false);
+  const [sendSuccessOpen, setSendSuccessOpen] = useState(false);
   const [approving, setApproving] = useState(false);
   
   const [loading, setLoading] = useState(false);
+
+  const copyClaimLink = () => {
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    provider.getSigner().getAddress().then(async (address) => {
+      const privateKey = localStorage.getItem('my_blessing_claim_key_' + blessingKeypairAddress)
+      navigator.clipboard.writeText(`[CryptoBlessing] ${props.blessing.title} | ${props.blessing.description}. Claim your BUSD & blessing NFT here: https://cryptoblessing.app/claim?sender=${encode(address)}&blessing=${encode(blessingKeypairAddress)}&key=${encode(privateKey)}`)
+    })
+  }
+
+
+  const handleSendSuccessClose = () => {
+    setSendSuccessOpen(false)
+  }
 
   const handleClose = () => {
     setOpen(false)
@@ -203,51 +226,84 @@ const BlessingCard2 = (props) => {
 
       return
     }
-    const totalAmount = claimQuantity * props.blessing.sol_price + parseFloat(tokenAmount)
-    const totalAmountInYocto = utils.format.parseNearAmount(totalAmount + "")
-    
-    // start to send blessing
-    const walletConnection = await getWalletConnection()
     try {
+      const arr = Object.values(kp._keypair.secretKey)
+      const secret = new Uint8Array(arr)
+      const adminParamAccount = anchor.web3.Keypair.fromSecretKey(secret)
+
+      const totalAmount = claimQuantity * props.blessing.sol_price + parseFloat(tokenAmount)
+      const totalAmountInLamports = totalAmount * LAMPORTS_PER_SOL
+      
       let hexes = []
       let claimKeys = []
-      const blessingKeypair = generateSeedPhrase();
-      const blessingSec = blessingKeypair.secretKey;
+      const blessingKeypair = anchor.web3.Keypair.generate();
+      const blessingSec = Buffer.from(blessingKeypair.secretKey).toString('base64')
       const blessingID = blessingKeypair.publicKey;
 
       // claim keys gen
       for (let i = 0; i < claimQuantity; i++) {
-        let seedPhrase = generateSeedPhrase();
-        hexes.push(sha256.sha256(seedPhrase.publicKey))
+        let seedPhrase = anchor.web3.Keypair.generate();
+        hexes.push(seedPhrase.publicKey)
         claimKeys.push({
           pubkey: seedPhrase.publicKey,
-          private_key: sha256.sha256(seedPhrase.publicKey)
+          private_key: Buffer.from(seedPhrase.secretKey).toString('base64') 
         })
       }
 
       await storeKeys(blessingID, blessingSec, claimKeys)
       localStorage.setItem('my_blessing_claim_key_' + blessingID, blessingSec)
 
-      let functionCallResult = await walletConnection.account().functionCall({
-        contractId: nearConfig.contractName,
-        methodName: 'send_blessing',
-        args: {
-          blessing_image: props.blessing.image, 
-          blessing_id: blessingID,
-          claim_quantity: parseInt(claimQuantity),
-          claim_type: claimType === 0 ? 'Average' : 'Random',
-          hexex: hexes
-        },
-        gas: DEFAULT_FUNCTION_CALL_GAS, // optional param, by the way
-        attachedDeposit: totalAmountInYocto, 
-        walletMeta: '', // optional param, by the way
-        walletCallbackUrl: document.location.toString().indexOf('?') != -1 ? 
-          document.location.toString() + '&callbackBlessingID=' + blessingID :
-          document.location.toString() + '?callbackBlessingID=' + blessingID
-      });
-      if (functionCallResult && functionCallResult.transaction && functionCallResult.transaction.hash) {
-        console.log('Transaction hash for explorer', functionCallResult.transaction.hash)
+      const sender_blessing1 = anchor.web3.Keypair.generate();
+      const blessing1 = anchor.web3.Keypair.generate();
+      let claimTypeJson = {}
+      if (claimType === 0) {
+        claimTypeJson = {avagege:{}}
+      } else {
+        claimTypeJson = {random:{}}
       }
+      const provider = new AnchorProvider(connection, anchorWallet, { preflightCommitment, commitment })
+      const program = new Program(idl, programID, provider)
+
+      let blessings = await program.account.blessing.all([
+        {
+          memcmp: {
+            offset: 8 + // Discriminator.
+              4, // string prefix
+            bytes: bs58.encode(Buffer.from(props.blessing.image)),
+          }
+        }
+      ]);
+      console.log('blessings', blessings)
+      if (blessings.length <= 0) {
+        setSending(false)
+
+        return
+      }
+      const choosedBlessing = blessings[0];
+      console.log('choosedBlessing.account.ownerId', choosedBlessing.account.ownerId)
+
+      await program.rpc.sendBlessing(
+        blessing1.publicKey, 
+        props.blessing.image, 
+        new anchor.BN(totalAmountInLamports) , 
+        new anchor.BN(parseInt(claimQuantity)), 
+        claimTypeJson, 
+        hexes,
+      {
+          accounts: {
+              senderBlessing: sender_blessing1.publicKey,
+              sender: publicKey,
+              blessing: choosedBlessing.publicKey,
+              blessingOwner: choosedBlessing.account.ownerId,
+              systemProgram: anchor.web3.SystemProgram.programId,
+          },
+          signers: [sender_blessing1],
+      });
+      setSending(false)
+
+      // localStorage.setItem('my_blessing_claim_key_' + blessingKeypair.address, blessingKeypair.privateKey)
+      setOpen(false)
+      setSendSuccessOpen(true)
     } catch (e) {
       console.log(e)
       setAlertMsg('Something went wrong. Please contact admin in telegram.')
@@ -448,6 +504,46 @@ const BlessingCard2 = (props) => {
                 )}
               </Box>
               
+            </CardActions>
+          </Card>
+        </Box>
+      </Modal>
+
+      <Modal
+        open={sendSuccessOpen}
+        onClose={handleSendSuccessClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={style}>
+          <Card>
+            <CardMedia sx={{ height: '14.5625rem' }} image='/images/blessings/congrats.webp' />
+            <CardContent>
+              <Typography variant='h6' sx={{ marginBottom: 2 }}>
+                Congratulations!
+              </Typography>
+              <Typography variant='body2'>
+                You have already sended this blessing successfully. Pls copy the claim link and share it with your friends.
+              </Typography>
+              <Typography variant='caption' color='error'>
+                FYI, only use this claim link can claim your blessing!
+              </Typography>
+            </CardContent>
+            <CardActions
+              sx={{
+                gap: 5,
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+              >
+              <Button onClick={handleSendSuccessClose} size='large' color='secondary' variant='outlined'>
+                Cancel
+              </Button>
+              <Button onClick={copyClaimLink} size='large' type='submit' sx={{ mr: 2 }} variant='contained'>
+                Copy Claim Link
+              </Button>
             </CardActions>
           </Card>
         </Box>

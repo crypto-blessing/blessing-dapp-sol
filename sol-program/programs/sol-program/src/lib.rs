@@ -6,7 +6,7 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("GW1WJU2kC69igFrFmNttA9UQNhDasb856ssEma6J786P");
 
 #[program]
 pub mod sol_program {
@@ -32,6 +32,16 @@ pub mod sol_program {
         ipfs: String,
     ) -> Result<()> {
         instructions::add_blessing::add_blessing(ctx, image, owner_id, price, tax_rate, ipfs)
+    }
+
+    pub fn update_blessing(ctx: Context<UpdateBlessing>, 
+        image: String, 
+        owner_id: Pubkey,
+        price: u64,
+        tax_rate: u16,
+        ipfs: String,
+    ) -> Result<()> {
+        instructions::update_blessing::update_blessing(ctx, image, owner_id, price, tax_rate, ipfs)
     }
 
     pub fn send_blessing(ctx: Context<SendBlessing>, 
