@@ -10,8 +10,8 @@ sol_program = "GW1WJU2kC69igFrFmNttA9UQNhDasb856ssEma6J786P"
 url = "https://anchor.projectserum.com"
 
 [provider]
-# cluster = "localnet"
-cluster = "devnet"
+cluster = "localnet"
+# cluster = "devnet"
 wallet = "/Users/quyang/.config/solana/id.json"
 
 [scripts]

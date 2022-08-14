@@ -6,7 +6,7 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("GW1WJU2kC69igFrFmNttA9UQNhDasb856ssEma6J786P");
+declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod sol_program {
@@ -50,15 +50,18 @@ pub mod sol_program {
         token_amount: u64,
         claim_quantity: u64,
         claim_type: ClaimType,
-        keys: Vec<Pubkey>,
+        keys: Vec<String>,
     ) -> Result<()> {
         // find the blessing in account
-        // let blessing: Account<Blessing> = ctx.accounts.blessing;
-        // require!(blessing, ErrorCode::BlessingNotFound);
-        // require!(blessing.deleted == false, ErrorCode::BlessingDeleted);
-        // require!(blessing.price > 0, ErrorCode::BlessingPriceZero);
         instructions::send_blessing::send_blessing(ctx, blessing_id, blessing_img, token_amount, claim_quantity, claim_type, keys)
     }
+
+    pub fn claim_blessing(ctx: Context<ClaimBlessing>, 
+        claim_key: String
+    ) -> Result<()> {
+        instructions::claim_blessing::claim_blessing(ctx, claim_key)
+    }
+
 }
 
 

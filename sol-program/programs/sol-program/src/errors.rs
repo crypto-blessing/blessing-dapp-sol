@@ -29,4 +29,19 @@ pub enum CryptoBlessingError {
 
     #[msg("Admin Param owner not match.")]
     AdminCanDoThis,
+
+    #[msg("No claim keys found.")]
+    NoKeysFound,
+
+    #[msg("Blessing revoked.")]
+    BlessingRevoked,
+
+    #[msg("Claim key verify faild.")]
+    ClaimKeyVerifyFailed,
+
+    #[msg("No blessing left.")]
+    NoBlessingLeft,
+
+    #[msg("You have already claim this blessing yet.")]
+    RepeatClaimErr,
 }

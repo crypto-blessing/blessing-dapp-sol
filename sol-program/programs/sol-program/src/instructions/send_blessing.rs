@@ -11,7 +11,7 @@ pub fn send_blessing(ctx: Context<SendBlessing>,
     token_amount: u64,
     claim_quantity: u64,
     claim_type: ClaimType,
-    keys: Vec<Pubkey>,
+    keys: Vec<String>,
 ) -> Result<()> {
     // find the blessing in account
     let blessing= &mut ctx.accounts.blessing;

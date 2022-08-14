@@ -1,16 +1,26 @@
 use anchor_lang::prelude::*;
 
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Copy)]
 pub enum ClaimType {
-    Avagege,
+    Average,
     Random,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub struct ClaimKey {
-    pub key: Pubkey, // 32
+    pub key: String, // 4 + 128 * 4
     pub used: bool, // 1
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Copy)]
+pub struct ClaimerInfo {
+    pub claimer: Pubkey, // 32
+    pub claim_timestamp: i64,  //8
+    pub distributed_amount: u64,    // 8
+    pub claim_amount: u64,  // 8
+    pub tax_amount: u64,    // 8
+    pub cbt_token_reward_to_sender_amount: u64, // 8
 }
 
 #[account]
@@ -23,12 +33,13 @@ pub struct SenderBlessing {
     pub claim_quantity: u64,     //8
     pub claim_type: ClaimType,  //1
     pub revoked: bool,  //1
-    pub claim_keys: Vec<ClaimKey>, // 4 + 32 * 13
+    pub claim_keys: Vec<ClaimKey>, // 4 + 33 * 13
+    pub claimer_list: Vec<ClaimerInfo>, // 4 + 72 * 13
 }
 
 impl SenderBlessing {
 
-    pub const LEN: usize = 32 + 32 + 4 + 256 * 4 + 8 + 8 + 8 + 1 + 1;
+    pub const LEN: usize = 32 + 32 + 4 + 256 * 4 + 8 + 8 + 8 + 1 + 1 + 4 + 33 * 13 + 4 + 72 * 13;
 
     pub fn save(&mut self, 
         sender: Pubkey,
