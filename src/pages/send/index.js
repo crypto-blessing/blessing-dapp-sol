@@ -42,7 +42,7 @@ import {decode} from 'src/@core/utils/cypher'
 
 import {encode} from 'src/@core/utils/cypher'
 
-
+import {LamportsToSOLFormat, simpleShowPublicKey} from 'src/@core/components/wallet/utils'
 import { useRouter } from 'next/router'
 
 

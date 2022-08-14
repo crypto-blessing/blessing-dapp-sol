@@ -5,5 +5,9 @@ export const LamportsToSOLFormat = (lamports) => {
 }
 
 export const simpleShowPublicKey = (publicKey) => {
-    return publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4)
+    if (publicKey && publicKey.length > 10) {
+        return publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4)
+    }
+
+    return publicKey
 }
