@@ -29,6 +29,8 @@ import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+
 
 import {
   WalletModalProvider,
@@ -63,35 +65,14 @@ const AppBarContent = props => {
   const [alertTitle, setAlertTitle] = useState('')
   const [alertMessage, setAlertMessage] = useState('')
 
-  const [nearConfig, setNearConfig] = useState({})
-
-  async function connect() {
-    const walletConnection = await getWalletConnection()
-    walletConnection.requestSignIn(
-      nearConfig.contractName,
-      '', // title. Optional, by the way
-      '', // successUrl. Optional, by the way
-      '', // failureUrl. Optional, by the way
-    ).then(async (response) => {
-      localStorage.setItem('isWalletConnected', true)
-    }).catch(async (error) => {
-      console.log("not authorized")
-    });
-  }
-
-  async function disconnect() {
-    const walletConnection = await getWalletConnection()
-    walletConnection.signOut();
-    window.location.replace(window.location.origin + window.location.pathname);
-  }
-
   // ** Props
   const { hidden, settings, saveSettings, toggleNavVisibility } = props
 
   // ** Hook
   const hiddenSm = useMediaQuery(theme => theme.breakpoints.down('sm'))
   
-  
+  const {wallet} = useWallet()
+  const { connection } = useConnection();
 
   const [open, setOpen] = useState(false);
 
@@ -101,6 +82,15 @@ const AppBarContent = props => {
 
   useEffect(() => {
     const loadBeforeOp = async () => {
+      if (connection) {
+        console.log('connection', connection._rpcEndpoint)
+        if (connection._rpcEndpoint != 'https://api.devnet.solana.com') {
+          setAlertTitle("Network not supported")
+          setAlertMessage("Service only available on Solana Devnet, please change your network setting.💗💗💗")
+          setAlertOpen(true)
+        }
+      }
+
       fetch('/api/security/block')
           .then((res) => res.json())
           .then((data) => {
@@ -112,7 +102,7 @@ const AppBarContent = props => {
           })
     }
     loadBeforeOp()
-  }, [])
+  }, [connection])
 
   return (
 

@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import {toLocaleDateFromBigInt} from 'src/@core/utils/date'
 import {encode} from 'src/@core/utils/cypher'
 import {LamportsToSOLFormat} from 'src/@core/components/wallet/utils'
