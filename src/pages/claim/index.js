@@ -46,9 +46,7 @@ import Alert from '@mui/material/Alert';
 
 import {decode, toEthSignedMessageHash} from 'src/@core/utils/cypher'
 
-import CryptoBlessing from 'src/artifacts/contracts/CryptoBlessing.sol/CryptoBlessing.json'
 import {transClaimListFromWalletClaims } from 'src/@core/utils/blessing'
-import {getProviderUrl, simpleShowNear, cryptoBlessingAdreess} from 'src/@core/components/wallet/address'
 import {toLocaleDateFromBigInt} from 'src/@core/utils/date'
 
 

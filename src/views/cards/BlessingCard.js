@@ -34,14 +34,11 @@ import { green } from '@mui/material/colors';
 import {BUSD_ICON} from 'src/@core/components/wallet/crypto-icons'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-import {getProviderUrl, simpleShow, cryptoBlessingAdreess, BUSDContractAddress} from 'src/@core/components/wallet/address'
 import {encode} from 'src/@core/utils/cypher'
 
 
 import { ethers } from 'ethers';
 import { useWeb3React } from "@web3-react/core"
-import CryptoBlessing from 'src/artifacts/contracts/CryptoBlessing.sol/CryptoBlessing.json'
-import BUSDContract from 'src/artifacts/contracts/TestBUSD.sol/BUSD.json'
 
 const style = {
   position: 'absolute',

@@ -36,8 +36,6 @@ import { green } from '@mui/material/colors';
 import {SOL_ICON} from 'src/@core/components/wallet/crypto-icons'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 
-import {LamportsToSOLFormat, simpleShowPublicKey} from 'src/@core/components/wallet/utils'
-
 // ** Icons Imports
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import {decode} from 'src/@core/utils/cypher'
