@@ -56,6 +56,12 @@ pub mod sol_program {
         instructions::send_blessing::send_blessing(ctx, blessing_id, blessing_img, token_amount, claim_quantity, claim_type, keys)
     }
 
+    pub fn revoke_blessing(
+        ctx: Context<RevokeBlessing>,
+    ) -> Result<()> {
+        instructions::revoke_blessing::revoke_blessing(ctx)
+    }
+
     pub fn claim_blessing(ctx: Context<ClaimBlessing>, 
         claim_key: String
     ) -> Result<()> {

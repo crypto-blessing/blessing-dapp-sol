@@ -63,5 +63,10 @@ impl SenderBlessing {
         Ok(())
     }
 
+    pub fn revoke_blessing(&mut self) -> Result<()> {
+        self.revoked = true;
+        Ok(())
+    }
+
 
 }

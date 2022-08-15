@@ -44,4 +44,7 @@ pub enum CryptoBlessingError {
 
     #[msg("You have already claim this blessing yet.")]
     RepeatClaimErr,
+
+    #[msg("Can not revoke because blessing is claiming.")]
+    BlessingClaimingErr,
 }
