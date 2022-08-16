@@ -236,25 +236,19 @@ const BlessingCard2 = (props) => {
       
       let hexes = []
       let claimKeys = []
-      const blessingKeypair = anchor.web3.Keypair.generate();
-      const blessingSec = Buffer.from(blessingKeypair.secretKey).toString('base64')
-      const blessingID = blessingKeypair.publicKey;
-
+      
       // claim keys gen
       for (let i = 0; i < claimQuantity; i++) {
         let seedPhrase = anchor.web3.Keypair.generate();
         hexes.push(seedPhrase.publicKey)
         claimKeys.push({
           pubkey: seedPhrase.publicKey,
-          private_key: Buffer.from(seedPhrase.secretKey).toString('base64') 
+          private_key: sha256.sha256(seedPhrase.publicKey)
         })
       }
-
-      await storeKeys(blessingID, blessingSec, claimKeys)
-      localStorage.setItem('my_blessing_claim_key_' + blessingID, blessingSec)
-
       const sender_blessing1 = anchor.web3.Keypair.generate();
-      const blessing1 = anchor.web3.Keypair.generate();
+      await storeKeys(sender_blessing1.publicKey, Buffer.from(sender_blessing1.secretKey).toString('base64'), claimKeys)
+      localStorage.setItem('my_blessing_claim_key_' + sender_blessing1.publicKey, Buffer.from(sender_blessing1.secretKey).toString('base64'))
       let claimTypeJson = {}
       if (claimType === 0) {
         claimTypeJson = {avagege:{}}
@@ -283,8 +277,6 @@ const BlessingCard2 = (props) => {
       console.log('choosedBlessing.account.ownerId', choosedBlessing.account.ownerId)
 
       await program.rpc.sendBlessing(
-        blessing1.publicKey, 
-        props.blessing.image, 
         new anchor.BN(totalAmountInLamports) , 
         new anchor.BN(parseInt(claimQuantity)), 
         claimTypeJson, 

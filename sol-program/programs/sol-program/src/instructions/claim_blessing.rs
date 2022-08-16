@@ -40,14 +40,13 @@ fn inner_claim_blessing<'info>(
     system_program: Program<'info, System>,
     ) -> Result<()> {
         require_eq!(sender_blessing.revoked, false, CryptoBlessingError::BlessingRevoked);
-        let hex = digest(claim_key);
         let claim_keys =  &mut sender_blessing.claim_keys;
         require_gt!(claim_keys.len(), 0, CryptoBlessingError::NoKeysFound);
         let mut hex_finded = false;
-        for claim_key in claim_keys {
-            if hex == claim_key.key {
+        for claim_key_info in claim_keys {
+            if claim_key == digest(claim_key_info.key.to_string()) {
                 hex_finded = true;
-                claim_key.used = true;
+                claim_key_info.used = true;
             }
         }
         require_eq!(hex_finded, true, CryptoBlessingError::ClaimKeyVerifyFailed);

@@ -6,12 +6,10 @@ use anchor_lang::prelude::*;
 
 
 pub fn send_blessing(ctx: Context<SendBlessing>, 
-    blessing_id: Pubkey, 
-    blessing_img: String,
     token_amount: u64,
     claim_quantity: u64,
     claim_type: ClaimType,
-    keys: Vec<String>,
+    keys: Vec<Pubkey>,
 ) -> Result<()> {
     // find the blessing in account
     let blessing= &mut ctx.accounts.blessing;
@@ -62,7 +60,7 @@ pub fn send_blessing(ctx: Context<SendBlessing>,
         });
     }
 
-    ctx.accounts.sender_blessing.save(*sender.key, blessing_id, blessing_img, token_amount, claim_quantity, claim_type, claim_keys)
+    ctx.accounts.sender_blessing.save(*sender.key, blessing.key(), blessing.image, token_amount, claim_quantity, claim_type, claim_keys)
 }
 
 

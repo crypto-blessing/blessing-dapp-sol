@@ -9,7 +9,7 @@ pub enum ClaimType {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub struct ClaimKey {
-    pub key: String, // 4 + 128 * 4
+    pub key: Pubkey, // 32
     pub used: bool, // 1
 }
 
