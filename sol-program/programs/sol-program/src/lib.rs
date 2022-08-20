@@ -45,15 +45,13 @@ pub mod sol_program {
     }
 
     pub fn send_blessing(ctx: Context<SendBlessing>, 
-        blessing_id: Pubkey, 
-        blessing_img: String,
         token_amount: u64,
         claim_quantity: u64,
         claim_type: ClaimType,
-        keys: Vec<String>,
+        keys: Vec<Pubkey>,
     ) -> Result<()> {
         // find the blessing in account
-        instructions::send_blessing::send_blessing(ctx, blessing_id, blessing_img, token_amount, claim_quantity, claim_type, keys)
+        instructions::send_blessing::send_blessing(ctx, token_amount, claim_quantity, claim_type, keys)
     }
 
     pub fn revoke_blessing(
@@ -63,9 +61,17 @@ pub mod sol_program {
     }
 
     pub fn claim_blessing(ctx: Context<ClaimBlessing>, 
+        blessing_title: String,
         claim_key: String
     ) -> Result<()> {
-        instructions::claim_blessing::claim_blessing(ctx, claim_key)
+        instructions::claim_blessing::claim_blessing(ctx, blessing_title, claim_key)
+    }
+
+    pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
+        blessing_title: String,
+        claim_key: String
+    ) -> Result<()> {
+        instructions::claim_blessing::claim_blessing_with_new_claimer(ctx, blessing_title, claim_key)
     }
 
 }

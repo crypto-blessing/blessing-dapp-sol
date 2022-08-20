@@ -11,8 +11,10 @@ describe('crypto-blessing', () => {
     const provider = anchor.Provider.env()
     anchor.setProvider(provider);
     const program = anchor.workspace.SolProgram;
+    const senderKeypair = program.provider.wallet.payer
     const sender = program.provider.wallet.publicKey
     const admin_param = anchor.web3.Keypair.generate()
+
 
     it("Is initialized!", async () => {
         // Add your test here.
@@ -50,6 +52,23 @@ describe('crypto-blessing', () => {
         });
     })
 
+    it('can update blessing', async () => {
+
+        await program.rpc.updateBlessing(
+            'image', 
+            blessing_owner.publicKey,
+            new anchor.BN(0.05 * LAMPORTS_PER_SOL), 
+            40 , 
+            'ipfs', 
+        {
+            accounts: {
+                blessing: blessing.publicKey,
+                adminParam: admin_param.publicKey,
+                owner: sender,
+            },
+        });
+    })
+
     const sender_blessing1 = anchor.web3.Keypair.generate();
 
     it('can send blessing 1', async () => {
@@ -73,6 +92,11 @@ describe('crypto-blessing', () => {
             },
             signers: [sender_blessing1],
         });
+
+        let afterBalance = await provider.connection.getBalance(sender);
+        console.log('afterBalance of sender', afterBalance / LAMPORTS_PER_SOL)
+        let afterBalanceOfSenderBlessing = await provider.connection.getBalance(sender_blessing1.publicKey);
+        console.log('afterBalanceOfSenderBlessing', afterBalanceOfSenderBlessing / LAMPORTS_PER_SOL)
     })
 
     it('can revoke blessing 1', async () => {
@@ -81,8 +105,16 @@ describe('crypto-blessing', () => {
             accounts: {
                 senderBlessing: sender_blessing1.publicKey,
                 sender: sender,
+                systemProgram: anchor.web3.SystemProgram.programId,
             },
+            signers: [],
         });
+        let afterBalanceOfSenderBlessing = await provider.connection.getBalance(sender_blessing1.publicKey);
+        console.log('afterBalanceOfSenderBlessing revoked', afterBalanceOfSenderBlessing / LAMPORTS_PER_SOL)
+        let balance = await provider.connection.getBalance(sender);
+        console.log('after balance revoked', balance / LAMPORTS_PER_SOL)
+        const blessings = await program.account.senderBlessing.all();
+        console.log('blessings:', blessings)
     })
 
     const sender_blessing2 = anchor.web3.Keypair.generate();

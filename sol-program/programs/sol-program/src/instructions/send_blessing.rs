@@ -60,7 +60,7 @@ pub fn send_blessing(ctx: Context<SendBlessing>,
         });
     }
 
-    ctx.accounts.sender_blessing.save(*sender.key, blessing.key(), blessing.image, token_amount, claim_quantity, claim_type, claim_keys)
+    ctx.accounts.sender_blessing.save(*sender.key, blessing.key(), blessing.image.clone(), token_amount, claim_quantity, claim_type, claim_keys)
 }
 
 

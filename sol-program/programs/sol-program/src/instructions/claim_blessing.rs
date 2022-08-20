@@ -24,9 +24,8 @@ fn inner_claim_blessing<'info>(
     claim_key: String,
     claimer_blessing: &mut Account<'info, ClaimerBlessing>,
     claimer: &mut AccountInfo<'info>,
-    sender_blessing: Account<'info, SenderBlessing>,
+    sender_blessing: &mut Account<'info, SenderBlessing>,
     blessing: Account<'info, Blessing>,
-    blessing_owner: AccountInfo<'info>,
     admin_param: Account<'info, AdminParam>,
     program_owner: &mut AccountInfo<'info>,
     sender: &mut AccountInfo<'info>,
@@ -40,7 +39,7 @@ fn inner_claim_blessing<'info>(
     system_program: Program<'info, System>,
     ) -> Result<()> {
         require_eq!(sender_blessing.revoked, false, CryptoBlessingError::BlessingRevoked);
-        let claim_keys =  &mut sender_blessing.claim_keys;
+        let claim_keys = &mut sender_blessing.claim_keys;
         require_gt!(claim_keys.len(), 0, CryptoBlessingError::NoKeysFound);
         let mut hex_finded = false;
         for claim_key_info in claim_keys {
@@ -178,7 +177,7 @@ fn inner_claim_blessing<'info>(
                 payer.key(),
                 blessing_title,
                 symbol,
-                blessing.ipfs,
+                blessing.ipfs.clone(),
                 Some(creator),
                 1,
                 true,
@@ -223,12 +222,12 @@ pub fn claim_blessing(ctx: Context<ClaimBlessing>,
     claim_key: String
 ) -> Result<()> {
     inner_claim_blessing(blessing_title, claim_key, 
-        &mut ctx.accounts.claimer_blessing, &mut ctx.accounts.claimer.to_account_info(), ctx.accounts.sender_blessing, 
-        ctx.accounts.blessing, ctx.accounts.blessing_owner, ctx.accounts.admin_param, 
-        &mut ctx.accounts.program_owner, &mut ctx.accounts.sender, ctx.accounts.token_program, 
-        ctx.accounts.mint, ctx.accounts.token_account, ctx.accounts.payer, 
-        ctx.accounts.metadata, ctx.accounts.token_metadata_program, ctx.accounts.master_edition, 
-        ctx.accounts.system_program)
+        &mut ctx.accounts.claimer_blessing, &mut ctx.accounts.claimer.to_account_info(), &mut ctx.accounts.sender_blessing.to_owned(), 
+        ctx.accounts.blessing.to_owned(), ctx.accounts.admin_param.to_owned(), 
+        &mut ctx.accounts.program_owner.to_owned(), &mut ctx.accounts.sender.to_owned(), ctx.accounts.token_program.to_owned(), 
+        ctx.accounts.mint.to_owned(), ctx.accounts.token_account.to_owned(), ctx.accounts.payer.to_owned(), 
+        ctx.accounts.metadata.to_owned(), ctx.accounts.token_metadata_program.to_owned(), ctx.accounts.master_edition.to_owned(), 
+        ctx.accounts.system_program.to_owned())
 }
 
 pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
@@ -236,12 +235,12 @@ pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>
     claim_key: String
 ) -> Result<()> {
     inner_claim_blessing(blessing_title, claim_key, 
-        &mut ctx.accounts.claimer_blessing, &mut ctx.accounts.claimer, ctx.accounts.sender_blessing, 
-        ctx.accounts.blessing, ctx.accounts.blessing_owner, ctx.accounts.admin_param, 
-        &mut ctx.accounts.program_owner, &mut ctx.accounts.sender, ctx.accounts.token_program, 
-        ctx.accounts.mint, ctx.accounts.token_account, ctx.accounts.payer, 
-        ctx.accounts.metadata, ctx.accounts.token_metadata_program, ctx.accounts.master_edition, 
-        ctx.accounts.system_program)
+        &mut ctx.accounts.claimer_blessing, &mut ctx.accounts.claimer, &mut ctx.accounts.sender_blessing.to_owned(), 
+        ctx.accounts.blessing.to_owned(), ctx.accounts.admin_param.to_owned(), 
+        &mut ctx.accounts.program_owner, &mut ctx.accounts.sender, ctx.accounts.token_program.to_owned(), 
+        ctx.accounts.mint.to_owned(), ctx.accounts.token_account.to_owned(), ctx.accounts.payer.to_owned(), 
+        ctx.accounts.metadata.to_owned(), ctx.accounts.token_metadata_program.to_owned(), ctx.accounts.master_edition.to_owned(), 
+        ctx.accounts.system_program.to_owned())
 }
 
 #[derive(Accounts)]
@@ -253,16 +252,13 @@ pub struct ClaimBlessing<'info> {
     #[account(mut)]
     pub sender_blessing: Account<'info, SenderBlessing>,
     pub blessing: Account<'info, Blessing>,
-    /// CHECK:
-    #[account(mut)]
-    pub blessing_owner: AccountInfo<'info>,
     pub admin_param: Account<'info, AdminParam>,
-    /// CHECK:
+    /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub program_owner: AccountInfo<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub sender: AccountInfo<'info>,
-    pub token_program: Program<'info, Token>,
 
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
@@ -278,14 +274,18 @@ pub struct ClaimBlessing<'info> {
     pub metadata: UncheckedAccount<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_metadata_program: UncheckedAccount<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub master_edition: UncheckedAccount<'info>,
 
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct ClaimBlessingWithNewClaimer<'info> {
+
+    /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(init, payer = sender_blessing, space = 8)]
     pub claimer: AccountInfo<'info>,
 
@@ -294,16 +294,13 @@ pub struct ClaimBlessingWithNewClaimer<'info> {
     #[account(mut)]
     pub sender_blessing: Account<'info, SenderBlessing>,
     pub blessing: Account<'info, Blessing>,
-    /// CHECK:
-    #[account(mut)]
-    pub blessing_owner: AccountInfo<'info>,
     pub admin_param: Account<'info, AdminParam>,
-    /// CHECK:
+    /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub program_owner: AccountInfo<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub sender: AccountInfo<'info>,
-    pub token_program: Program<'info, Token>,
 
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
@@ -319,8 +316,10 @@ pub struct ClaimBlessingWithNewClaimer<'info> {
     pub metadata: UncheckedAccount<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_metadata_program: UncheckedAccount<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub master_edition: UncheckedAccount<'info>,
 
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
