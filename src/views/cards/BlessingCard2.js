@@ -63,8 +63,6 @@ const style = {
   p: 4,
 };
 
-const DEFAULT_FUNCTION_CALL_GAS = new BN('30000000000000');
-
 // Styled Grid component
 const StyledGrid = styled(Grid)(({ theme }) => ({
   display: 'flex',
@@ -233,28 +231,6 @@ const BlessingCard2 = (props) => {
 
       const totalAmount = claimQuantity * props.blessing.sol_price + parseFloat(tokenAmount)
       const totalAmountInLamports = totalAmount * LAMPORTS_PER_SOL
-      
-      let hexes = []
-      let claimKeys = []
-      
-      // claim keys gen
-      for (let i = 0; i < claimQuantity; i++) {
-        let seedPhrase = anchor.web3.Keypair.generate();
-        hexes.push(seedPhrase.publicKey)
-        claimKeys.push({
-          pubkey: seedPhrase.publicKey,
-          private_key: sha256.sha256(seedPhrase.publicKey)
-        })
-      }
-      const sender_blessing1 = anchor.web3.Keypair.generate();
-      await storeKeys(sender_blessing1.publicKey, Buffer.from(sender_blessing1.secretKey).toString('base64'), claimKeys)
-      localStorage.setItem('my_blessing_claim_key_' + sender_blessing1.publicKey, Buffer.from(sender_blessing1.secretKey).toString('base64'))
-      let claimTypeJson = {}
-      if (claimType === 0) {
-        claimTypeJson = {avagege:{}}
-      } else {
-        claimTypeJson = {random:{}}
-      }
       const provider = new AnchorProvider(connection, anchorWallet, { preflightCommitment, commitment })
       const program = new Program(idl, programID, provider)
 
@@ -270,14 +246,37 @@ const BlessingCard2 = (props) => {
       console.log('blessings', blessings)
       if (blessings.length <= 0) {
         setSending(false)
+        console.log('no blessings found')
 
         return
       }
+      let hexes = []
+      let claimKeys = []
+      
+      // claim keys gen
+      for (let i = 0; i < claimQuantity; i++) {
+        let seedPhrase = anchor.web3.Keypair.generate();
+        hexes.push(seedPhrase.publicKey)
+        claimKeys.push({
+          pubkey: seedPhrase.publicKey.toBase58(),
+          private_key: sha256.sha256(seedPhrase.publicKey.toBase58())
+        })
+      }
+      const sender_blessing1 = anchor.web3.Keypair.generate();
+
+      await storeKeys(sender_blessing1.publicKey.toBase58(), Buffer.from(sender_blessing1.secretKey).toString('base64'), claimKeys)
+      localStorage.setItem('my_blessing_claim_key_' + sender_blessing1.publicKey.toBase58(), Buffer.from(sender_blessing1.secretKey).toString('base64'))
+      let claimTypeJson = {}
+      if (claimType === 0) {
+        claimTypeJson = {avagege:{}}
+      } else {
+        claimTypeJson = {random:{}}
+      }
       const choosedBlessing = blessings[0];
-      console.log('choosedBlessing.account.ownerId', choosedBlessing.account.ownerId)
+      console.log('choosedBlessing.account.ownerId', choosedBlessing.account.ownerId.toBase58())
 
       await program.rpc.sendBlessing(
-        new anchor.BN(totalAmountInLamports) , 
+        new anchor.BN(parseFloat(tokenAmount) * LAMPORTS_PER_SOL) , 
         new anchor.BN(parseInt(claimQuantity)), 
         claimTypeJson, 
         hexes,

@@ -95,9 +95,9 @@ const AppBarContent = props => {
           .then((res) => res.json())
           .then((data) => {
             if (data.block) {
-              setAlertTitle("Security Detected")
-              setAlertMessage("Service is not available in your area, please leave.💗💗💗")
-              setAlertOpen(true)
+              // setAlertTitle("Security Detected")
+              // setAlertMessage("Service is not available in your area, please leave.💗💗💗")
+              // setAlertOpen(true)
             }
           })
     }

@@ -4,7 +4,7 @@
 const anchor = require("@project-serum/anchor");
 
 const LAMPORTS_PER_SOL = 1000000000;
-const admin_param_id_key = JSON.parse('{"_keypair":{"publicKey":{"0":54,"1":153,"2":117,"3":248,"4":246,"5":104,"6":16,"7":33,"8":59,"9":92,"10":77,"11":35,"12":165,"13":133,"14":29,"15":135,"16":193,"17":35,"18":221,"19":54,"20":253,"21":241,"22":65,"23":219,"24":5,"25":209,"26":234,"27":201,"28":50,"29":142,"30":24,"31":201},"secretKey":{"0":157,"1":9,"2":198,"3":185,"4":240,"5":213,"6":174,"7":42,"8":16,"9":156,"10":143,"11":192,"12":146,"13":126,"14":53,"15":45,"16":201,"17":18,"18":97,"19":33,"20":74,"21":169,"22":73,"23":226,"24":61,"25":111,"26":84,"27":52,"28":184,"29":219,"30":113,"31":134,"32":54,"33":153,"34":117,"35":248,"36":246,"37":104,"38":16,"39":33,"40":59,"41":92,"42":77,"43":35,"44":165,"45":133,"46":29,"47":135,"48":193,"49":35,"50":221,"51":54,"52":253,"53":241,"54":65,"55":219,"56":5,"57":209,"58":234,"59":201,"60":50,"61":142,"62":24,"63":201}}}')
+const admin_param_id_key = JSON.parse('{"_keypair":{"publicKey":{"0":162,"1":147,"2":110,"3":184,"4":143,"5":127,"6":222,"7":229,"8":179,"9":149,"10":207,"11":153,"12":7,"13":207,"14":27,"15":207,"16":67,"17":124,"18":242,"19":26,"20":74,"21":74,"22":12,"23":213,"24":181,"25":158,"26":106,"27":255,"28":90,"29":182,"30":217,"31":81},"secretKey":{"0":87,"1":160,"2":179,"3":53,"4":144,"5":209,"6":134,"7":80,"8":84,"9":192,"10":179,"11":176,"12":5,"13":115,"14":116,"15":63,"16":131,"17":107,"18":43,"19":182,"20":239,"21":204,"22":249,"23":13,"24":205,"25":11,"26":225,"27":76,"28":59,"29":125,"30":70,"31":125,"32":162,"33":147,"34":110,"35":184,"36":143,"37":127,"38":222,"39":229,"40":179,"41":149,"42":207,"43":153,"44":7,"45":207,"46":27,"47":207,"48":67,"49":124,"50":242,"51":26,"52":74,"53":74,"54":12,"55":213,"56":181,"57":158,"58":106,"59":255,"60":90,"61":182,"62":217,"63":81}}}')
 
 
 describe('crypto-blessing', () => {
@@ -13,7 +13,7 @@ describe('crypto-blessing', () => {
     anchor.setProvider(provider);
     const program = anchor.workspace.SolProgram;
     const sender = program.provider.wallet.publicKey
-
+    const designer = new anchor.web3.PublicKey("DhCK19XeATX4yo1rm7Nqpv4fgBqYE815qeJAXhfF3iY9")
     const arr = Object.values(admin_param_id_key._keypair.secretKey)
     const secret = new Uint8Array(arr)
     const admin_param = anchor.web3.Keypair.fromSecretKey(secret)
@@ -30,7 +30,7 @@ describe('crypto-blessing', () => {
 
         const tx =  await program.rpc.addBlessing(
             'goddess_blessing.gif', 
-            sender.publicKey,
+            designer,
             new anchor.BN(100000000), 
             10 , 
             'https://bafybeigdqtu6clkz2bghdftt62tvsadkzyyaqoet5qly2kg6fe54ncggwu.ipfs.nftstorage.link/goddess_blessing.gif', 
@@ -48,7 +48,7 @@ describe('crypto-blessing', () => {
         blessing1 = anchor.web3.Keypair.generate()
         await program.rpc.addBlessing(
             'I_adore_you.gif', 
-            sender.publicKey,
+            designer,
             new anchor.BN(100000000), 
             10 , 
             'https://bafybeigdqtu6clkz2bghdftt62tvsadkzyyaqoet5qly2kg6fe54ncggwu.ipfs.nftstorage.link/I_adore_you.gif', 
@@ -65,7 +65,7 @@ describe('crypto-blessing', () => {
         blessing1 = anchor.web3.Keypair.generate()
         await program.rpc.addBlessing(
             '12_love.gif', 
-            sender.publicKey,
+            designer,
             new anchor.BN(100000000), 
             10 , 
             'https://bafybeigdqtu6clkz2bghdftt62tvsadkzyyaqoet5qly2kg6fe54ncggwu.ipfs.nftstorage.link/12_love.gif', 
@@ -82,7 +82,7 @@ describe('crypto-blessing', () => {
         blessing1 = anchor.web3.Keypair.generate()
         await program.rpc.addBlessing(
             'mirabilis_lady.gif', 
-            sender.publicKey,
+            designer,
             new anchor.BN(100000000), 
             10 , 
             'https://bafybeigdqtu6clkz2bghdftt62tvsadkzyyaqoet5qly2kg6fe54ncggwu.ipfs.nftstorage.link/mirabilis_lady.gif', 
@@ -99,7 +99,7 @@ describe('crypto-blessing', () => {
         blessing1 = anchor.web3.Keypair.generate()
         await program.rpc.addBlessing(
             'YOU+ME.gif', 
-            sender.publicKey,
+            designer,
             new anchor.BN(100000000), 
             10 , 
             'https://bafybeigdqtu6clkz2bghdftt62tvsadkzyyaqoet5qly2kg6fe54ncggwu.ipfs.nftstorage.link/YOU+ME.gif', 

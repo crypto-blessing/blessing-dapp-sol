@@ -32,12 +32,13 @@ export const transBlesingsFromWalletBlessings = (sender, blessings) => {
             amount: LamportsToSOLFormat(blessing.account.tokenAmount),
             quantity: blessing.account.claimQuantity.toString(),
             type: blessing.account.claimType.random ? 'Random' : 'Average',
-            progress: '/claim?sender=' + encode(sender.toBase58()) + '&blessing=' + encode(blessing.publicKey.toBase58()),
-            revoked: blessing.account.revoked
+            progress: '/claim?sender=' + encode(sender.toBase58()) + '&sender_blessing=' + encode(blessing.publicKey.toBase58()),
+            revoked: blessing.account.revoked,
+            timestamp: blessing.account.sendTimestamp
         })
     })
 
-    return newBlessings
+    return newBlessings.reverse()
 }
 
 export const transClaimBlesingsFromWalletBlessings = (blessings) => {

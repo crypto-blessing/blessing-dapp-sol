@@ -13,6 +13,7 @@ describe('crypto-blessing', () => {
     const program = anchor.workspace.SolProgram;
     const senderKeypair = program.provider.wallet.payer
     const sender = program.provider.wallet.publicKey
+    const fakeSender = anchor.web3.Keypair.generate()
     const admin_param = anchor.web3.Keypair.generate()
 
 
@@ -31,13 +32,14 @@ describe('crypto-blessing', () => {
         console.log("Your transaction signature", tx);
     });
 
-    const blessing_owner = anchor.web3.Keypair.generate()
+    // const blessing_owner = anchor.web3.Keypair.generate()
+    const designer = new anchor.web3.PublicKey("DhCK19XeATX4yo1rm7Nqpv4fgBqYE815qeJAXhfF3iY9")
     const blessing = anchor.web3.Keypair.generate();
     it('can add blessing', async () => {
 
         await program.rpc.addBlessing(
             'image', 
-            blessing_owner.publicKey,
+            designer,
             new anchor.BN(0.05 * LAMPORTS_PER_SOL), 
             30 , 
             'ipfs', 
@@ -56,7 +58,7 @@ describe('crypto-blessing', () => {
 
         await program.rpc.updateBlessing(
             'image', 
-            blessing_owner.publicKey,
+            designer,
             new anchor.BN(0.05 * LAMPORTS_PER_SOL), 
             40 , 
             'ipfs', 
@@ -72,7 +74,7 @@ describe('crypto-blessing', () => {
     const sender_blessing1 = anchor.web3.Keypair.generate();
 
     it('can send blessing 1', async () => {
-        console.log('blessing_owner', blessing_owner.publicKey)
+        console.log('designer', designer.toBase58())
 
         let beforeBalance = await provider.connection.getBalance(sender);
         console.log('beforeBalance', beforeBalance / LAMPORTS_PER_SOL)
@@ -87,7 +89,7 @@ describe('crypto-blessing', () => {
                 senderBlessing: sender_blessing1.publicKey,
                 sender: sender,
                 blessing: blessing.publicKey,
-                blessingOwner: blessing_owner.publicKey,
+                blessingOwner: designer,
                 systemProgram: anchor.web3.SystemProgram.programId,
             },
             signers: [sender_blessing1],
@@ -95,9 +97,23 @@ describe('crypto-blessing', () => {
 
         let afterBalance = await provider.connection.getBalance(sender);
         console.log('afterBalance of sender', afterBalance / LAMPORTS_PER_SOL)
+        let after_blessing_owner = await provider.connection.getBalance(designer);
+        console.log('after_blessing_owner', after_blessing_owner / LAMPORTS_PER_SOL)
         let afterBalanceOfSenderBlessing = await provider.connection.getBalance(sender_blessing1.publicKey);
         console.log('afterBalanceOfSenderBlessing', afterBalanceOfSenderBlessing / LAMPORTS_PER_SOL)
     })
+
+    // it('can not revoke blessing 1', async () => {
+    //     await program.rpc.revokeBlessing(
+    //     {
+    //         accounts: {
+    //             senderBlessing: sender_blessing1.publicKey,
+    //             sender: fakeSender.publicKey,
+    //             systemProgram: anchor.web3.SystemProgram.programId,
+    //         },
+    //         signers: [fakeSender],
+    //     });
+    // })
 
     it('can revoke blessing 1', async () => {
         await program.rpc.revokeBlessing(
@@ -113,8 +129,8 @@ describe('crypto-blessing', () => {
         console.log('afterBalanceOfSenderBlessing revoked', afterBalanceOfSenderBlessing / LAMPORTS_PER_SOL)
         let balance = await provider.connection.getBalance(sender);
         console.log('after balance revoked', balance / LAMPORTS_PER_SOL)
-        const blessings = await program.account.senderBlessing.all();
-        console.log('blessings:', blessings)
+        let after_blessing_owner = await provider.connection.getBalance(designer);
+        console.log('after_blessing_owner revoked', after_blessing_owner / LAMPORTS_PER_SOL)
     })
 
     const sender_blessing2 = anchor.web3.Keypair.generate();
@@ -139,7 +155,7 @@ describe('crypto-blessing', () => {
                 senderBlessing: sender_blessing2.publicKey,
                 sender: sender,
                 blessing: blessing.publicKey,
-                blessingOwner: blessing_owner.publicKey,
+                blessingOwner: designer,
                 systemProgram: anchor.web3.SystemProgram.programId,
             },
             signers: [sender_blessing2],
@@ -150,10 +166,12 @@ describe('crypto-blessing', () => {
         console.log('blessings:', blessings)
         let afterBalance = await provider.connection.getBalance(sender);
         console.log('afterBalance', afterBalance / LAMPORTS_PER_SOL)
-        let senderBlessingBalance = await provider.connection.getBalance(sender_blessing1.publicKey);
+        let senderBlessingBalance = await provider.connection.getBalance(sender_blessing2.publicKey);
         console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
-        let blessingOwnerBalance = await provider.connection.getBalance(blessing_owner.publicKey);
+        let blessingOwnerBalance = await provider.connection.getBalance(designer);
         console.log('blessingOwnerBalance', blessingOwnerBalance / LAMPORTS_PER_SOL)
+        let after_blessing_owner = await provider.connection.getBalance(designer);
+        console.log('after_blessing_owner', after_blessing_owner / LAMPORTS_PER_SOL)
     });
 
 

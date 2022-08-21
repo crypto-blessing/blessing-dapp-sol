@@ -6,7 +6,7 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("2tHZEpRNAW7a4NLqiyYC6G9xwySHbDs4CS6SnAiHux4F");
 
 #[program]
 pub mod sol_program {

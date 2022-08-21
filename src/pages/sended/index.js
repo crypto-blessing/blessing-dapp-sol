@@ -19,6 +19,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useEffect, useState } from "react"
 import { useWallet, useAnchorWallet, useConnection } from '@solana/wallet-adapter-react';
 
+import {SOL_ICON} from 'src/@core/components/wallet/crypto-icons'
 import {LamportsToSOLFormat, simpleShowPublicKey} from 'src/@core/components/wallet/utils'
 import {transBlesingsFromWalletBlessings} from 'src/@core/utils/blessing.js'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
@@ -26,6 +27,7 @@ import kp from 'src/program/admin_param_keypair.json'
 import idl from 'src/program/idl.json'
 import { AnchorProvider, Program } from '@project-serum/anchor'
 import bs58 from 'bs58'
+
 
 const anchor = require("@project-serum/anchor")
 
@@ -141,7 +143,7 @@ const BlessingSended = () => {
                                         {column.type === undefined ? value : ''}
 
                                         {column.type === 'amount' ?
-                                        <Chip variant="outlined" avatar={<Avatar sx={{ width: 24, height: 24 }}>Ⓝ</Avatar>} color="secondary" label={value} />
+                                        <Chip variant="outlined" avatar={<SOL_ICON />} color="secondary" label={value} />
                                         : ''}
 
                                         {column.type == 'quantity' ?

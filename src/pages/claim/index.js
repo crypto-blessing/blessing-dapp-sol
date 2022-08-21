@@ -44,6 +44,13 @@ import InfoIcon from '@mui/icons-material/Info';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 
+import {SOL_ICON} from 'src/@core/components/wallet/crypto-icons'
+import { useWallet, useAnchorWallet, useConnection } from '@solana/wallet-adapter-react';
+import { AnchorProvider, Program } from '@project-serum/anchor'
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
+import kp from 'src/program/admin_param_keypair.json'
+import idl from 'src/program/idl.json'
+import {LamportsToSOLFormat, simpleShowPublicKey} from 'src/@core/components/wallet/utils'
 import {decode, toEthSignedMessageHash} from 'src/@core/utils/cypher'
 
 import {transClaimListFromWalletClaims } from 'src/@core/utils/blessing'
@@ -54,6 +61,13 @@ import{ viewMethodOnContract } from 'src/@core/configs/utils'
 import {encode} from 'src/@core/utils/cypher'
 
 import BN from 'bn.js';
+
+const anchor = require("@project-serum/anchor")
+
+const preflightCommitment = 'processed'
+const commitment = 'processed'
+const programID = new PublicKey(idl.metadata.address)
+
 
 // ** Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -107,34 +121,35 @@ const DEFAULT_FUNCTION_CALL_GAS = new BN('300000000000000');
 
 const ClaimPage = () => {
 
-  const [nearConfig, setNearConfig] = useState(null)
-  const [currentUser, setCurrentUser] = useState('')
-
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
+  const anchorWallet =  useAnchorWallet()
 
   const [sender, setSender] = useState('')
   const [blessingID, setBlessingID] = useState('')
+  const [senderBleesingPubkey, setSenderBleesingPubkey] = useState('')
   const [claimKey, setClaimKey] = useState('')
   const router = useRouter()
 
   // ** Hook
   useEffect (() => {
-    const {sender, blessing, key} = router.query
+    const {sender, blessing, sender_blessing, key} = router.query
       setSender(decode(sender))
       setBlessingID(decode(blessing))
+      setSenderBleesingPubkey(decode(sender_blessing))
       if (key) {
         setClaimKey(decode(key))
       }
       if (localStorage.getItem('my_claimed_' + decode(blessing)) === '1' || localStorage.getItem('my_blessing_claim_key_' + decode(blessing)) != undefined) {
         setAlreadyClaimed(true)
       }
-      if (blessing) {
-        fetch(`/api/items/fetchOneItem?blessing_id=${decode(blessing)}`)
+      if (sender_blessing) {
+        fetch(`/api/items/fetchOneItem?blessing_id=${decode(sender_blessing)}`)
           .then((res) => res.json())
           .then((data) => {
             setBlessingInDB(data)
           })
       }
-      
   }, [router.query])
   
 
@@ -198,27 +213,6 @@ const ClaimPage = () => {
     setNewAccountID(event.target.value)
   }
 
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  async function featchAllInfoOfBlessing() {
-    try {
-      console.log('start to fetching info of blessing on chain')
-      const chainData = await viewMethodOnContract(nearConfig, 'get_all_info_of_blessing', '{"sender": "' + sender + '","blessing_id": "' + blessingID + '"}');
-      setBlessing(chainData.blessing)
-      setBlessingSended(chainData.sender_blessing)
-      console.log(chainData.blessing_claim_status)
-      const claimResp = transClaimListFromWalletClaims(chainData.blessing_claim_status)
-      setClaimList(claimResp.claims)
-      setClaimedAmount(claimResp.claimedAmount)
-      setLuckyClaimer(claimResp.luckyClaimer)
-      setLoading(false);
-    } catch (err) {
-      console.log("Error: ", err)
-
-      // window.location.replace("/pages/404")
-    }
-  }
-
   const revokeBlessing = async () => {
     setRevoking(true)
     const walletConnection = await getWalletConnection()
@@ -272,7 +266,7 @@ const ClaimPage = () => {
         methodName: 'claim_blessing',
         args: {
           sender: sender, 
-          claimer: currentUser,
+          claimer: publicKey,
           blessing_id: blessingID,
           claim_key: unusedPrivateKeyJson.data.pubkey,
           title: blessingInDB.title,
@@ -363,6 +357,39 @@ const ClaimPage = () => {
     }
   }
 
+  async function featchAllInfoOfBlessing() {
+    try {
+      console.log('start to fetching info of blessing on chain')
+
+      const provider = new AnchorProvider(connection, anchorWallet, { preflightCommitment, commitment })
+      const program = new Program(idl, programID, provider)
+
+      let blessing_sended = await program.account.senderBlessing.fetch(new PublicKey(senderBleesingPubkey));
+      console.log('blessing_sended', blessing_sended)
+
+      // let blessing = await program.account.blessing.fetch(new PublicKey(blessingID));
+      // setBlessing(chainData.blessing)
+      setBlessingSended(blessing_sended)
+
+      const claimResp = transClaimListFromWalletClaims(chainData.blessing_claim_status)
+      setClaimList(claimResp.claims)
+      setClaimedAmount(claimResp.claimedAmount)
+      setLuckyClaimer(claimResp.luckyClaimer)
+      setLoading(false);
+    } catch (err) {
+      console.log("Error: ", err)
+
+      // window.location.replace("/pages/404")
+    }
+  }
+
+  useEffect(() => {
+    if (anchorWallet) {
+      featchAllInfoOfBlessing()
+    }
+    
+  }, [anchorWallet])
+
   return (
     <Grid container spacing={6}>
       <Grid item xs={12} sm={6} md={2}>
@@ -391,12 +418,12 @@ const ClaimPage = () => {
             {blessingInDB.description}
             </Typography>
             <Stack direction="row" spacing={1}>
-              <Chip variant="outlined" color="secondary" icon={<Avatar sx={{ width: 24, height: 24 }}>Ⓝ</Avatar>} label={claimedAmount + '/' + (blessingSended && blessingSended.token_amount ? parseFloat(utils.format.formatNearAmount(blessingSended.token_amount)).toFixed(2) : 0) + ' NEAR'} />
-              <Chip variant="outlined" color="primary" label={claimList.length + '/' + (blessingSended && blessingSended.claim_quantity ? blessingSended?.claim_quantity?.toString() : 0) + ' Blessings'} icon={<AccountCircleIcon />} />
+              <Chip variant="outlined" color="secondary" icon={<SOL_ICON />} label={claimedAmount + '/' + (blessingSended && blessingSended.tokenAmount ? LamportsToSOLFormat(blessingSended.tokenAmount) : 0) + ' SOL'} />
+              <Chip variant="outlined" color="primary" label={claimList.length + '/' + (blessingSended && blessingSended.claimQuantity ? blessingSended?.claimQuantity?.toString() : 0) + ' Blessings'} icon={<AccountCircleIcon />} />
             </Stack>
           </CardContent>
 
-          <Divider sx={{ my: 3 }}>sended at {blessingSended.send_timestamp ? toLocaleDateFromBigInt(blessingSended.send_timestamp/1000000000) : '1970'}  by {sender ? sender : 'CryptoBlessing'}</Divider>
+          <Divider sx={{ my: 3 }}>sended at {blessingSended.sendTimestamp ? toLocaleDateFromBigInt(blessingSended.sendTimestamp) : '1970'}  by {sender ? simpleShowPublicKey(sender) : 'CryptoBlessing'}</Divider>
           
           <CardContent>
             {claimList.length > 0 ?
@@ -416,7 +443,7 @@ const ClaimPage = () => {
 
                       <StyledTableCell component='th' scope='row'>
                         <Stack direction="row" spacing={1}>
-                          {row.claimer == lastGenKeyPair?.account && !currentUser ? 
+                          {row.claimer == lastGenKeyPair?.account && !publicKey ? 
                           <IconButton size="small" color="secondary" aria-label="Your local wallet" onClick={handleClaimSuccessOpen}>
                             <AccountBalanceWalletIcon fontSize="inherit" />
                           </IconButton>
@@ -482,14 +509,14 @@ const ClaimPage = () => {
               flexDirection: 'column',
             }}
             >
-            { !currentUser ?
+            { !publicKey ?
             <Button disabled={claimList.length == blessingSended.claim_quantity || alreadyClaimed} onClick={handleClaimBlessingWithoutLoginOpen} variant='contained' sx={{ py: 2.5, width: '100%', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
               Claim Blessing Without Login
             </Button>
             :
             ''
             }
-            { currentUser && sender === currentUser && !blessingSended.revoked ?
+            { publicKey.toBase58() && sender === publicKey.toBase58() && !blessingSended.revoked ?
               <Stack direction="row" spacing={1}>
                 <Tooltip title="You can only revoke the amount you sended and need there is no one claimed it yet.">
                   <IconButton>
@@ -525,7 +552,7 @@ const ClaimPage = () => {
             ''
             }
 
-            { currentUser && sender === currentUser && blessingSended.revoked ?
+            { publicKey.toBase58() && sender === publicKey.toBase58() && blessingSended.revoked ?
               <Stack direction="row" spacing={1}>
                 <Tooltip title="You can only revoke the amount you sended and need there is no one claimed it yet.">
                   <IconButton>
@@ -546,7 +573,7 @@ const ClaimPage = () => {
 
 
 
-            { currentUser && sender !== currentUser ?
+            { publicKey.toBase58() && sender !== publicKey.toBase58() ?
             <Stack direction="row" spacing={1}>
               <Box sx={{ m: 1, position: 'relative' }}>
                 <Button disabled={claiming || claimKey == '' || alreadyClaimed || claimList.length == blessingSended.claim_quantity} onClick={claimBlessing} size='large' type='submit' sx={{ mr: 2 }} variant='contained'>
@@ -609,11 +636,6 @@ const ClaimPage = () => {
               <Typography variant='caption' color='info'>
                 Please copy the seed phrase above and store it in a safe place. You can restore your account on NEAR WALLET with it.
               </Typography>
-              {tx ?
-              <Typography variant='caption'>
-                <Link target='_blank' href={nearConfig?.explorerUrl + '/transactions/' + tx}>See the transaction on Near</Link>
-              </Typography>
-              : ''}
               
             </CardContent>
             <CardActions
@@ -628,8 +650,8 @@ const ClaimPage = () => {
               <Button onClick={handleClaimSuccessClose} size='large' color='secondary' variant='outlined'>
                 Cancel
               </Button>
-              <Button href={nearConfig?.walletUrl} target='_blank' size='large' type='submit' sx={{ mr: 2 }} variant='contained'>
-                To NEAR Wallet
+              <Button href='wallet' size='large' type='submit' sx={{ mr: 2 }} variant='contained'>
+                To My Wallet
               </Button>
             </CardActions>
           </Card>
@@ -660,11 +682,6 @@ const ClaimPage = () => {
                            crypto_blessing_
                           </InputAdornment>
                           ),
-                        endAdornment: (
-                          <InputAdornment position='end'>
-                           {nearConfig?.accountSuffix}
-                          </InputAdornment>
-                          )
                       }}
                       />
                   </Grid>

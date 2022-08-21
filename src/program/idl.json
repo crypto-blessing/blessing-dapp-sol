@@ -1,32 +1,429 @@
 {
-    "version": "0.1.0",
-    "name": "sol_program",
-    "instructions": [
-      {
-        "name": "initialize",
-        "accounts": [],
-        "args": []
-      },
-      {
-        "name": "addBlessing",
-        "accounts": [
-          {
-            "name": "blessing",
-            "isMut": true,
-            "isSigner": true
-          },
-          {
-            "name": "owner",
-            "isMut": true,
-            "isSigner": true
-          },
-          {
-            "name": "systemProgram",
-            "isMut": false,
-            "isSigner": false
+  "version": "0.1.0",
+  "name": "sol_program",
+  "instructions": [
+    {
+      "name": "initialize",
+      "accounts": [
+        {
+          "name": "adminParam",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "updateAdminParam",
+      "accounts": [
+        {
+          "name": "adminParam",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programOwner",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "cbtRewardRatio",
+          "type": "u16"
+        },
+        {
+          "name": "cbtRewardMax",
+          "type": "u64"
+        },
+        {
+          "name": "claimTaxRate",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "addBlessing",
+      "accounts": [
+        {
+          "name": "blessing",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "adminParam",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "image",
+          "type": "string"
+        },
+        {
+          "name": "ownerId",
+          "type": "publicKey"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "taxRate",
+          "type": "u16"
+        },
+        {
+          "name": "ipfs",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "updateBlessing",
+      "accounts": [
+        {
+          "name": "blessing",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "adminParam",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "image",
+          "type": "string"
+        },
+        {
+          "name": "ownerId",
+          "type": "publicKey"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "taxRate",
+          "type": "u16"
+        },
+        {
+          "name": "ipfs",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "sendBlessing",
+      "accounts": [
+        {
+          "name": "senderBlessing",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "sender",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "blessing",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "blessingOwner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "tokenAmount",
+          "type": "u64"
+        },
+        {
+          "name": "claimQuantity",
+          "type": "u64"
+        },
+        {
+          "name": "claimType",
+          "type": {
+            "defined": "ClaimType"
           }
-        ],
-        "args": [
+        },
+        {
+          "name": "keys",
+          "type": {
+            "vec": "publicKey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "revokeBlessing",
+      "accounts": [
+        {
+          "name": "senderBlessing",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sender",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claimBlessing",
+      "accounts": [
+        {
+          "name": "claimerBlessing",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "claimer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "senderBlessing",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "blessing",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "adminParam",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programOwner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sender",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "metadata",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "masterEdition",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "blessingTitle",
+          "type": "string"
+        },
+        {
+          "name": "claimKey",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "claimBlessingWithNewClaimer",
+      "accounts": [
+        {
+          "name": "claimer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "claimerBlessing",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "senderBlessing",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "blessing",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "adminParam",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programOwner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sender",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "metadata",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "masterEdition",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "blessingTitle",
+          "type": "string"
+        },
+        {
+          "name": "claimKey",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AdminParam",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "programOwner",
+            "type": "publicKey"
+          },
+          {
+            "name": "cbtRewardRatio",
+            "type": "u16"
+          },
+          {
+            "name": "cbtRewardMax",
+            "type": "u64"
+          },
+          {
+            "name": "claimTaxRate",
+            "type": "u16"
+          },
+          {
+            "name": "inited",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Blessing",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
             "name": "image",
             "type": "string"
@@ -40,6 +437,10 @@
             "type": "u64"
           },
           {
+            "name": "deleted",
+            "type": "bool"
+          },
+          {
             "name": "taxRate",
             "type": "u16"
           },
@@ -48,37 +449,21 @@
             "type": "string"
           }
         ]
-      },
-      {
-        "name": "sendBlessing",
-        "accounts": [
+      }
+    },
+    {
+      "name": "ClaimerBlessing",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            "name": "senderBlessing",
-            "isMut": true,
-            "isSigner": true
+            "name": "claimer",
+            "type": "publicKey"
           },
           {
             "name": "sender",
-            "isMut": true,
-            "isSigner": true
+            "type": "publicKey"
           },
-          {
-            "name": "blessing",
-            "isMut": false,
-            "isSigner": false
-          },
-          {
-            "name": "blessingOwner",
-            "isMut": true,
-            "isSigner": false
-          },
-          {
-            "name": "systemProgram",
-            "isMut": false,
-            "isSigner": false
-          }
-        ],
-        "args": [
           {
             "name": "blessingId",
             "type": "publicKey"
@@ -86,6 +471,42 @@
           {
             "name": "blessingImg",
             "type": "string"
+          },
+          {
+            "name": "claimTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "claimAmount",
+            "type": "u64"
+          },
+          {
+            "name": "taxAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SenderBlessing",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sender",
+            "type": "publicKey"
+          },
+          {
+            "name": "blessingId",
+            "type": "publicKey"
+          },
+          {
+            "name": "blessingImg",
+            "type": "string"
+          },
+          {
+            "name": "sendTimestamp",
+            "type": "i64"
           },
           {
             "name": "tokenAmount",
@@ -102,163 +523,171 @@
             }
           },
           {
-            "name": "keys",
+            "name": "revoked",
+            "type": "bool"
+          },
+          {
+            "name": "claimKeys",
             "type": {
-              "vec": "publicKey"
+              "vec": {
+                "defined": "ClaimKey"
+              }
+            }
+          },
+          {
+            "name": "claimerList",
+            "type": {
+              "vec": {
+                "defined": "ClaimerInfo"
+              }
             }
           }
         ]
       }
-    ],
-    "accounts": [
-      {
-        "name": "Blessing",
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "image",
-              "type": "string"
-            },
-            {
-              "name": "ownerId",
-              "type": "publicKey"
-            },
-            {
-              "name": "price",
-              "type": "u64"
-            },
-            {
-              "name": "deleted",
-              "type": "bool"
-            },
-            {
-              "name": "taxRate",
-              "type": "u16"
-            },
-            {
-              "name": "ipfs",
-              "type": "string"
-            }
-          ]
-        }
-      },
-      {
-        "name": "SenderBlessing",
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "sender",
-              "type": "publicKey"
-            },
-            {
-              "name": "blessingId",
-              "type": "publicKey"
-            },
-            {
-              "name": "blessingImg",
-              "type": "string"
-            },
-            {
-              "name": "sendTimestamp",
-              "type": "i64"
-            },
-            {
-              "name": "tokenAmount",
-              "type": "u64"
-            },
-            {
-              "name": "claimQuantity",
-              "type": "u64"
-            },
-            {
-              "name": "claimType",
-              "type": {
-                "defined": "ClaimType"
-              }
-            },
-            {
-              "name": "revoked",
-              "type": "bool"
-            },
-            {
-              "name": "claimKeys",
-              "type": {
-                "vec": {
-                  "defined": "ClaimKey"
-                }
-              }
-            }
-          ]
-        }
-      }
-    ],
-    "types": [
-      {
-        "name": "ClaimKey",
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "key",
-              "type": "publicKey"
-            },
-            {
-              "name": "used",
-              "type": "bool"
-            }
-          ]
-        }
-      },
-      {
-        "name": "ClaimType",
-        "type": {
-          "kind": "enum",
-          "variants": [
-            {
-              "name": "Avagege"
-            },
-            {
-              "name": "Random"
-            }
-          ]
-        }
-      }
-    ],
-    "errors": [
-      {
-        "code": 6000,
-        "name": "BlessingNotFound",
-        "msg": "Can not find this blessing."
-      },
-      {
-        "code": 6001,
-        "name": "BlessingDeleted",
-        "msg": "This blessing is deleted."
-      },
-      {
-        "code": 6002,
-        "name": "BlessingPriceZero",
-        "msg": "Blessing price is zero."
-      },
-      {
-        "code": 6003,
-        "name": "BlessingOwnerNotMatch",
-        "msg": "Blessing owner not match."
-      },
-      {
-        "code": 6004,
-        "name": "BlessingClaimQuantityNotMatch",
-        "msg": "Blessing claim quantity not match."
-      },
-      {
-        "code": 6005,
-        "name": "ClaimeQuantityGT0LTE13",
-        "msg": "claime quantity > 0 && <= 13."
-      }
-    ],
-    "metadata": {
-      "address": "GW1WJU2kC69igFrFmNttA9UQNhDasb856ssEma6J786P"
     }
+  ],
+  "types": [
+    {
+      "name": "ClaimKey",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "key",
+            "type": "publicKey"
+          },
+          {
+            "name": "used",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ClaimerInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "claimer",
+            "type": "publicKey"
+          },
+          {
+            "name": "claimTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "distributedAmount",
+            "type": "u64"
+          },
+          {
+            "name": "claimAmount",
+            "type": "u64"
+          },
+          {
+            "name": "taxAmount",
+            "type": "u64"
+          },
+          {
+            "name": "cbtTokenRewardToSenderAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ClaimType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Average"
+          },
+          {
+            "name": "Random"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "BlessingNotFound",
+      "msg": "Can not find this blessing."
+    },
+    {
+      "code": 6001,
+      "name": "BlessingDeleted",
+      "msg": "This blessing is deleted."
+    },
+    {
+      "code": 6002,
+      "name": "BlessingPriceZero",
+      "msg": "Blessing price is zero."
+    },
+    {
+      "code": 6003,
+      "name": "BlessingOwnerNotMatch",
+      "msg": "Blessing owner not match."
+    },
+    {
+      "code": 6004,
+      "name": "BlessingClaimQuantityNotMatch",
+      "msg": "Blessing claim quantity not match."
+    },
+    {
+      "code": 6005,
+      "name": "ClaimeQuantityGT0LTE13",
+      "msg": "claime quantity > 0 && <= 13."
+    },
+    {
+      "code": 6006,
+      "name": "AdminParamAlreadyInited",
+      "msg": "Admin Param already inited."
+    },
+    {
+      "code": 6007,
+      "name": "AdminParamNotInited",
+      "msg": "Admin Param not inited."
+    },
+    {
+      "code": 6008,
+      "name": "AdminCanDoThis",
+      "msg": "Admin Param owner not match."
+    },
+    {
+      "code": 6009,
+      "name": "NoKeysFound",
+      "msg": "No claim keys found."
+    },
+    {
+      "code": 6010,
+      "name": "BlessingRevoked",
+      "msg": "Blessing revoked."
+    },
+    {
+      "code": 6011,
+      "name": "ClaimKeyVerifyFailed",
+      "msg": "Claim key verify faild."
+    },
+    {
+      "code": 6012,
+      "name": "NoBlessingLeft",
+      "msg": "No blessing left."
+    },
+    {
+      "code": 6013,
+      "name": "RepeatClaimErr",
+      "msg": "You have already claim this blessing yet."
+    },
+    {
+      "code": 6014,
+      "name": "BlessingClaimingErr",
+      "msg": "Can not revoke because blessing is claiming."
+    }
+  ],
+  "metadata": {
+    "address": "2tHZEpRNAW7a4NLqiyYC6G9xwySHbDs4CS6SnAiHux4F"
   }
+}

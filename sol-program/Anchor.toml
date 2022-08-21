@@ -1,10 +1,10 @@
 [features]
 seeds = false
 [programs.localnet]
-sol_program = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+sol_program = "2tHZEpRNAW7a4NLqiyYC6G9xwySHbDs4CS6SnAiHux4F"
 
 [programs.devnet]
-sol_program = "GW1WJU2kC69igFrFmNttA9UQNhDasb856ssEma6J786P"
+sol_program = "2tHZEpRNAW7a4NLqiyYC6G9xwySHbDs4CS6SnAiHux4F"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -16,6 +16,7 @@ wallet = "/Users/quyang/.config/solana/id.json"
 
 [scripts]
 test = "yarn run mocha -t 1000000 tests/"
+create_admin_param_keypair = "yarn run mocha -t 1000000 scripts/createAdminParamKeyPair.js"
 init_admin_param = "yarn run mocha -t 1000000 scripts/init_admin_param.js"
 update_admin_param = "yarn run mocha -t 1000000 scripts/update_admin_param.js"
 add_blessing = "yarn run mocha -t 1000000 scripts/add_blessing.js"
