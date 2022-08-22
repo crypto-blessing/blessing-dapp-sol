@@ -48,7 +48,7 @@ pub mod sol_program {
         token_amount: u64,
         claim_quantity: u64,
         claim_type: ClaimType,
-        keys: Vec<Pubkey>,
+        keys: Vec<String>,
     ) -> Result<()> {
         // find the blessing in account
         instructions::send_blessing::send_blessing(ctx, token_amount, claim_quantity, claim_type, keys)
@@ -67,12 +67,12 @@ pub mod sol_program {
         instructions::claim_blessing::claim_blessing(ctx, blessing_title, claim_key)
     }
 
-    pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
-        blessing_title: String,
-        claim_key: String
-    ) -> Result<()> {
-        instructions::claim_blessing::claim_blessing_with_new_claimer(ctx, blessing_title, claim_key)
-    }
+    // pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
+    //     blessing_title: String,
+    //     claim_key: String
+    // ) -> Result<()> {
+    //     instructions::claim_blessing::claim_blessing_with_new_claimer(ctx, blessing_title, claim_key)
+    // }
 
 }
 

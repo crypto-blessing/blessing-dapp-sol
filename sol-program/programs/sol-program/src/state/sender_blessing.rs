@@ -9,7 +9,7 @@ pub enum ClaimType {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub struct ClaimKey {
-    pub key: Pubkey, // 32
+    pub key: String, // 4+65*4
     pub used: bool, // 1
 }
 
@@ -33,13 +33,13 @@ pub struct SenderBlessing {
     pub claim_quantity: u64,     //8
     pub claim_type: ClaimType,  //1
     pub revoked: bool,  //1
-    pub claim_keys: Vec<ClaimKey>, // 4 + 33 * 13
+    pub claim_keys: Vec<ClaimKey>, // 4 + (4+ 65 * 4 + 1) * 13
     pub claimer_list: Vec<ClaimerInfo>, // 4 + 72 * 13
 }
 
 impl SenderBlessing {
 
-    pub const LEN: usize = 32 + 32 + 4 + 256 * 4 + 8 + 8 + 8 + 1 + 1 + 4 + 33 * 13 + 4 + 72 * 13;
+    pub const LEN: usize = 32 + 32 + 4 + 256 * 4 + 8 + 8 + 8 + 1 + 1 + 4 + (4+ 65 * 4 + 1) * 13 + 4 + 72 * 13;
 
     pub fn save(&mut self, 
         sender: Pubkey,

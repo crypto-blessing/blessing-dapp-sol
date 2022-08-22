@@ -256,7 +256,7 @@ const BlessingCard2 = (props) => {
       // claim keys gen
       for (let i = 0; i < claimQuantity; i++) {
         let seedPhrase = anchor.web3.Keypair.generate();
-        hexes.push(seedPhrase.publicKey)
+        hexes.push(sha256.sha256(seedPhrase.publicKey))
         claimKeys.push({
           pubkey: seedPhrase.publicKey.toBase58(),
           private_key: sha256.sha256(seedPhrase.publicKey.toBase58())

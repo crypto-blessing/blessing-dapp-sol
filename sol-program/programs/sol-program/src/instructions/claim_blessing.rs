@@ -1,8 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token;
-use anchor_lang::solana_program::program::invoke;
-use anchor_spl::{token::{MintTo, Token, Transfer}};
-use mpl_token_metadata::instruction::{create_master_edition_v3, create_metadata_accounts_v2};
 use crate::errors::CryptoBlessingError;
 use crate::state::blessing::*;
 use crate::state::sender_blessing::*;
@@ -29,13 +25,6 @@ fn inner_claim_blessing<'info>(
     admin_param: Account<'info, AdminParam>,
     program_owner: &mut AccountInfo<'info>,
     sender: &mut AccountInfo<'info>,
-    token_program: Program<'info, Token>,
-    mint: UncheckedAccount<'info>,
-    token_account: UncheckedAccount<'info>,
-    payer: AccountInfo<'info>,
-    metadata: UncheckedAccount<'info>,
-    token_metadata_program: UncheckedAccount<'info>,
-    master_edition: UncheckedAccount<'info>,
     system_program: Program<'info, System>,
     ) -> Result<()> {
         require_eq!(sender_blessing.revoked, false, CryptoBlessingError::BlessingRevoked);
@@ -43,7 +32,7 @@ fn inner_claim_blessing<'info>(
         require_gt!(claim_keys.len(), 0, CryptoBlessingError::NoKeysFound);
         let mut hex_finded = false;
         for claim_key_info in claim_keys {
-            if claim_key == digest(claim_key_info.key.to_string()) {
+            if claim_key_info.key == digest(claim_key.clone()) {
                 hex_finded = true;
                 claim_key_info.used = true;
             }
@@ -89,127 +78,60 @@ fn inner_claim_blessing<'info>(
         });
     
         // transfer the blessing token to sender_blessing account
-        let ix = anchor_lang::solana_program::system_instruction::transfer(
-            &sender_blessing.key(),
-            &claimer.key,
-            distribution_amount / 1000 * (1000 - admin_param.claim_tax_rate as u64),
-        );
-        anchor_lang::solana_program::program::invoke(
-            &ix,
-            &[
-                sender_blessing.to_account_info(),
-                claimer.to_account_info(),
-            ],
-        ).expect("transfer to claimer failed");
+        // let ix = anchor_lang::solana_program::system_instruction::transfer(
+        //     &sender_blessing.key(),
+        //     &claimer.key,
+        //     distribution_amount / 1000 * (1000 - admin_param.claim_tax_rate as u64),
+        // );
+        // anchor_lang::solana_program::program::invoke(
+        //     &ix,
+        //     &[
+        //         sender_blessing.to_account_info(),
+        //         claimer.to_account_info(),
+        //     ],
+        // ).expect("transfer to claimer failed");
+
+        let amount_to_claimer = distribution_amount / 1000 * (1000 - admin_param.claim_tax_rate as u64);
+        **sender_blessing.to_account_info().try_borrow_mut_lamports()? -= amount_to_claimer;
+        **claimer.to_account_info().try_borrow_mut_lamports()? += amount_to_claimer;
     
-        let ix = anchor_lang::solana_program::system_instruction::transfer(
-            &sender_blessing.key(),
-            program_owner.key,
-            distribution_amount / 1000 * admin_param.claim_tax_rate as u64,
-        );
-        anchor_lang::solana_program::program::invoke(
-            &ix,
-            &[
-                sender_blessing.to_account_info(),
-                program_owner.to_account_info(),
-            ],
-        ).expect("transfer to program owner failed");
+        // let ix = anchor_lang::solana_program::system_instruction::transfer(
+        //     &sender_blessing.key(),
+        //     program_owner.key,
+        //     distribution_amount / 1000 * admin_param.claim_tax_rate as u64,
+        // );
+        // anchor_lang::solana_program::program::invoke(
+        //     &ix,
+        //     &[
+        //         sender_blessing.to_account_info(),
+        //         program_owner.to_account_info(),
+        //     ],
+        // ).expect("transfer to program owner failed");
+        let tax_to_program_owner = distribution_amount / 1000 * admin_param.claim_tax_rate as u64;
+        **sender_blessing.to_account_info().try_borrow_mut_lamports()? -= tax_to_program_owner;
+        **program_owner.to_account_info().try_borrow_mut_lamports()? += tax_to_program_owner;
     
         // transfer the cbt token to sender
-        let sender_blessing_pk = sender_blessing.key().clone();
-        let inner = vec![
-            b"state".as_ref(),
-            sender_blessing_pk.as_ref(),
-            sender.key.as_ref(),
-        ];
-        let outer = vec![inner.as_slice()];
-        let transfer_instruction = Transfer{
-            from: sender_blessing.to_account_info(),
-            to: sender.to_account_info(),
-            authority: sender_blessing.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(
-            token_program.to_account_info(),
-            transfer_instruction,
-            outer.as_slice(),
-        );
-        anchor_spl::token::transfer(cpi_ctx, cbt_token_reward)?;
+        // let sender_blessing_pk = sender_blessing.key().clone();
+        // let inner = vec![
+        //     b"state".as_ref(),
+        //     sender_blessing_pk.as_ref(),
+        //     sender.key.as_ref(),
+        // ];
+        // let outer = vec![inner.as_slice()];
+        // let transfer_instruction = Transfer{
+        //     from: sender_blessing.to_account_info(),
+        //     to: sender.to_account_info(),
+        //     authority: sender_blessing.to_account_info(),
+        // };
+        // let cpi_ctx = CpiContext::new_with_signer(
+        //     token_program.to_account_info(),
+        //     transfer_instruction,
+        //     outer.as_slice(),
+        // );
+        // anchor_spl::token::transfer(cpi_ctx, cbt_token_reward)?;
     
-        // mint the NFT token to claimer
-        let cpi_accounts = MintTo {
-            mint: mint.to_account_info(),
-            to: token_account.to_account_info(),
-            authority: payer.to_account_info(),
-        };
-        let cpi_program = token_program.to_account_info();
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-        token::mint_to(cpi_ctx, 1)?;
-        let account_info = vec![
-                metadata.to_account_info(),
-                mint.to_account_info(),
-                program_owner.to_account_info(),
-                payer.to_account_info(),
-                token_metadata_program.to_account_info(),
-                token_program.to_account_info(),
-                system_program.to_account_info(),
-            ];
-    
-        let creator = vec![
-            mpl_token_metadata::state::Creator {
-                address: *claimer.key,
-                verified: false,
-                share: 1,
-            },
-            mpl_token_metadata::state::Creator {
-                address: program_owner.key(),
-                verified: false,
-                share: 0,
-            },
-        ];
-        let symbol = std::string::ToString::to_string("CBNFT");
-        invoke(
-            &create_metadata_accounts_v2(
-                token_metadata_program.key(),
-                metadata.key(),
-                mint.key(),
-                program_owner.key(),
-                payer.key(),
-                payer.key(),
-                blessing_title,
-                symbol,
-                blessing.ipfs.clone(),
-                Some(creator),
-                1,
-                true,
-                false,
-                None,
-                None,
-            ),
-            account_info.as_slice(),
-        )?;
-        let master_edition_infos = vec![
-            master_edition.to_account_info(),
-            mint.to_account_info(),
-            program_owner.to_account_info(),
-            payer.to_account_info(),
-            metadata.to_account_info(),
-            token_metadata_program.to_account_info(),
-            token_program.to_account_info(),
-            system_program.to_account_info(),
-        ];
-        invoke(
-            &create_master_edition_v3(
-                token_metadata_program.key(),
-                master_edition.key(),
-                mint.key(),
-                payer.key(),
-                program_owner.key(),
-                metadata.key(),
-                payer.key(),
-                Some(0),
-            ),
-            master_edition_infos.as_slice(),
-        )?;
+        // TODO mint the NFT token to claimer
     
         claimer_blessing.save(*claimer.key, sender_blessing.sender, sender_blessing.blessing_id, 
             sender_blessing.blessing_img.clone(), 
@@ -224,24 +146,22 @@ pub fn claim_blessing(ctx: Context<ClaimBlessing>,
     inner_claim_blessing(blessing_title, claim_key, 
         &mut ctx.accounts.claimer_blessing, &mut ctx.accounts.claimer.to_account_info(), &mut ctx.accounts.sender_blessing.to_owned(), 
         ctx.accounts.blessing.to_owned(), ctx.accounts.admin_param.to_owned(), 
-        &mut ctx.accounts.program_owner.to_owned(), &mut ctx.accounts.sender.to_owned(), ctx.accounts.token_program.to_owned(), 
-        ctx.accounts.mint.to_owned(), ctx.accounts.token_account.to_owned(), ctx.accounts.payer.to_owned(), 
-        ctx.accounts.metadata.to_owned(), ctx.accounts.token_metadata_program.to_owned(), ctx.accounts.master_edition.to_owned(), 
+        &mut ctx.accounts.program_owner.to_owned(), &mut ctx.accounts.sender.to_owned(),
         ctx.accounts.system_program.to_owned())
 }
 
-pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
-    blessing_title: String,
-    claim_key: String
-) -> Result<()> {
-    inner_claim_blessing(blessing_title, claim_key, 
-        &mut ctx.accounts.claimer_blessing, &mut ctx.accounts.claimer, &mut ctx.accounts.sender_blessing.to_owned(), 
-        ctx.accounts.blessing.to_owned(), ctx.accounts.admin_param.to_owned(), 
-        &mut ctx.accounts.program_owner, &mut ctx.accounts.sender, ctx.accounts.token_program.to_owned(), 
-        ctx.accounts.mint.to_owned(), ctx.accounts.token_account.to_owned(), ctx.accounts.payer.to_owned(), 
-        ctx.accounts.metadata.to_owned(), ctx.accounts.token_metadata_program.to_owned(), ctx.accounts.master_edition.to_owned(), 
-        ctx.accounts.system_program.to_owned())
-}
+// pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
+//     blessing_title: String,
+//     claim_key: String
+// ) -> Result<()> {
+//     inner_claim_blessing(blessing_title, claim_key, 
+//         &mut ctx.accounts.claimer_blessing, &mut ctx.accounts.claimer, &mut ctx.accounts.sender_blessing.to_owned(), 
+//         ctx.accounts.blessing.to_owned(), ctx.accounts.admin_param.to_owned(), 
+//         &mut ctx.accounts.program_owner, &mut ctx.accounts.sender, ctx.accounts.token_program.to_owned(), 
+//         ctx.accounts.mint.to_owned(), ctx.accounts.token_account.to_owned(), ctx.accounts.payer.to_owned(), 
+//         ctx.accounts.metadata.to_owned(), ctx.accounts.token_metadata_program.to_owned(), ctx.accounts.master_edition.to_owned(), 
+//         ctx.accounts.system_program.to_owned())
+// }
 
 #[derive(Accounts)]
 pub struct ClaimBlessing<'info> {
@@ -260,66 +180,47 @@ pub struct ClaimBlessing<'info> {
     #[account(mut)]
     pub sender: AccountInfo<'info>,
 
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub mint: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub token_account: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub payer: AccountInfo<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub metadata: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    pub token_metadata_program: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub master_edition: UncheckedAccount<'info>,
-
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
-pub struct ClaimBlessingWithNewClaimer<'info> {
+// #[derive(Accounts)]
+// pub struct ClaimBlessingWithNewClaimer<'info> {
 
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(init, payer = sender_blessing, space = 8)]
-    pub claimer: AccountInfo<'info>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     #[account(init, payer = sender_blessing, space = 8)]
+//     pub claimer: AccountInfo<'info>,
 
-    #[account(init, payer = claimer, space = ClaimerBlessing::LEN + 8)]
-    pub claimer_blessing: Account<'info, ClaimerBlessing>,
-    #[account(mut)]
-    pub sender_blessing: Account<'info, SenderBlessing>,
-    pub blessing: Account<'info, Blessing>,
-    pub admin_param: Account<'info, AdminParam>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub program_owner: AccountInfo<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub sender: AccountInfo<'info>,
+//     #[account(init, payer = claimer, space = ClaimerBlessing::LEN + 8)]
+//     pub claimer_blessing: Account<'info, ClaimerBlessing>,
+//     #[account(mut)]
+//     pub sender_blessing: Account<'info, SenderBlessing>,
+//     pub blessing: Account<'info, Blessing>,
+//     pub admin_param: Account<'info, AdminParam>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     #[account(mut)]
+//     pub program_owner: AccountInfo<'info>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     #[account(mut)]
+//     pub sender: AccountInfo<'info>,
 
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub mint: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub token_account: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub payer: AccountInfo<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub metadata: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    pub token_metadata_program: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub master_edition: UncheckedAccount<'info>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     #[account(mut)]
+//     pub mint: UncheckedAccount<'info>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     #[account(mut)]
+//     pub token_account: UncheckedAccount<'info>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     #[account(mut)]
+//     pub payer: AccountInfo<'info>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     #[account(mut)]
+//     pub metadata: UncheckedAccount<'info>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     pub token_metadata_program: UncheckedAccount<'info>,
+//     /// CHECK: This is not dangerous because we don't read or write from this account
+//     #[account(mut)]
+//     pub master_edition: UncheckedAccount<'info>,
 
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-}
+//     pub token_program: Program<'info, Token>,
+//     pub system_program: Program<'info, System>,
+// }
