@@ -5,9 +5,15 @@ import sha256 from 'js-sha256';
 import * as spl from '@solana/spl-token';
 import { clusterApiUrl, Connection, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-
 import anchor from "@project-serum/anchor";
 
+import {
+    TOKEN_PROGRAM_ID,
+    createAssociatedTokenAccountInstruction,
+    getAssociatedTokenAddress,
+    createInitializeMintInstruction,
+    MINT_SIZE,
+} from "@solana/spl-token";
 
 
 describe('crypto-blessing', () => {
@@ -22,7 +28,9 @@ describe('crypto-blessing', () => {
     const fakeSender = anchor.web3.Keypair.generate()
     const admin_param = anchor.web3.Keypair.generate()
 
-
+    const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
+        "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+    );
 
     const createCBT = async () => {
         const tokenMint = new anchor.web3.Keypair();
@@ -237,6 +245,17 @@ describe('crypto-blessing', () => {
         console.log(`[${claimer.publicKey.toBase58()}] Funded new account with 5 SOL: ${sigTxFund}`);
     }
 
+    const getMetadata = async (mint) => {
+        return (await anchor.web3.PublicKey.findProgramAddress(
+          [
+            Buffer.from("metadata"),
+            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+            mint.toBuffer(),
+          ],
+          TOKEN_METADATA_PROGRAM_ID
+        ))[0];
+    };
+
     it('can claim blessing 2', async () => {
 
         const claimer1 = anchor.web3.Keypair.generate()
@@ -256,23 +275,23 @@ describe('crypto-blessing', () => {
         let claimer1Balance = await provider.connection.getBalance(claimer1.publicKey);
         console.log('claimer1', claimer1Balance / LAMPORTS_PER_SOL)
 
-        await createCBT()
+        // await createCBT()
 
-        await program.rpc.claimBlessing(
-            'claim title', claimKey1,
-        {
-            accounts: {
-                claimerBlessing: claimer_blessing1.publicKey,
-                claimer: claimer1.publicKey,
-                senderBlessing: sender_blessing2.publicKey,
-                blessing: blessing.publicKey,
-                adminParam: admin_param.publicKey,
-                programOwner: sender,
-                sender: sender,
-                systemProgram: anchor.web3.SystemProgram.programId,
-            },
-            signers: [claimer1, claimer_blessing1],
-        });
+        // await program.rpc.claimBlessing(
+        //     'claim title', claimKey1,
+        // {
+        //     accounts: {
+        //         claimerBlessing: claimer_blessing1.publicKey,
+        //         claimer: claimer1.publicKey,
+        //         senderBlessing: sender_blessing2.publicKey,
+        //         blessing: blessing.publicKey,
+        //         adminParam: admin_param.publicKey,
+        //         programOwner: sender,
+        //         sender: sender,
+        //         systemProgram: anchor.web3.SystemProgram.programId,
+        //     },
+        //     signers: [claimer1, claimer_blessing1],
+        // });
 
         claimer1Balance = await provider.connection.getBalance(claimer1.publicKey);
         console.log('claimer1', claimer1Balance / LAMPORTS_PER_SOL)
@@ -284,8 +303,47 @@ describe('crypto-blessing', () => {
         let claimer2Balance = await provider.connection.getBalance(claimer2.publicKey);
         console.log('claimer2', claimer2Balance / LAMPORTS_PER_SOL)
 
-        await createCBT()
+        // await createCBT()
 
+        const lamports = await program.provider.connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+        console.log("Mint Account Lamports: ", lamports);
+
+        const mintKey = anchor.web3.Keypair.generate();
+
+        const nftTokenAccount = await getAssociatedTokenAddress(
+            mintKey.publicKey,
+            provider.wallet.publicKey
+        );
+        console.log("NFT Account: ", nftTokenAccount.toBase58());
+
+        const mint_tx = new anchor.web3.Transaction().add(
+            anchor.web3.SystemProgram.createAccount({
+                fromPubkey: provider.wallet.publicKey,
+                newAccountPubkey: mintKey.publicKey,
+                space: MINT_SIZE,
+                programId: TOKEN_PROGRAM_ID,
+                lamports,
+            }),
+            createInitializeMintInstruction(
+                mintKey.publicKey,
+                0,
+                provider.wallet.publicKey,
+                provider.wallet.publicKey,
+            ),
+            createAssociatedTokenAccountInstruction(
+                provider.wallet.publicKey,
+                nftTokenAccount,
+                provider.wallet.publicKey,
+                mintKey.publicKey
+            )
+        );
+
+        // const res = await provider.sendAndConfirm(mint_tx, [mintKey]);
+        console.log("Mint key: ", mintKey.publicKey.toString());
+        console.log("User: ", provider.wallet.publicKey.toString());
+
+        const metadataAddress = await getMetadata(mintKey.publicKey);
+        console.log("Metadata address: ", metadataAddress.toBase58());
         await program.rpc.claimBlessing(
             'claim title', claimKey2,
         {
@@ -298,6 +356,13 @@ describe('crypto-blessing', () => {
                 programOwner: sender,
                 sender: sender,
                 systemProgram: anchor.web3.SystemProgram.programId,
+                mintAuthority: claimer2.publicKey,
+                mint: mintKey.publicKey,
+                tokenAccount: nftTokenAccount,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                metadata: metadataAddress,
+                tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+                payer: claimer2.publicKey,
             },
             signers: [claimer2, claimer_blessing2],
         });
@@ -307,6 +372,12 @@ describe('crypto-blessing', () => {
 
         let senderBlessingBalance = await provider.connection.getBalance(sender_blessing2.publicKey);
         console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
+
+        const sender_blessing_res = await program.account.senderBlessing.fetch(sender_blessing2.publicKey);
+        console.log('sender_blessing_res:', sender_blessing_res.claimerList)
+
+        const claimerblessings = await program.account.claimerBlessing.all();
+        console.log('claimerblessings:', claimerblessings)
 
     })
 

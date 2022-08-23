@@ -1,10 +1,14 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program::invoke;
 use crate::errors::CryptoBlessingError;
 use crate::state::blessing::*;
 use crate::state::sender_blessing::*;
 use crate::state::claimer_blessing::*;
 use crate::state::AdminParam;
 use sha256::*;
+use anchor_spl::token::mint_to;
+use anchor_spl::token::{MintTo, Token};
+use mpl_token_metadata::instruction::{create_metadata_accounts_v2};
 
 fn random_num() -> u64 {
     let clock: Clock = Clock::get().unwrap();
@@ -15,101 +19,67 @@ fn random_num() -> u64 {
     return random;
 }
 
-fn inner_claim_blessing<'info>(
+pub fn claim_blessing(ctx: Context<ClaimBlessing>, 
     blessing_title: String,
-    claim_key: String,
-    claimer_blessing: &mut Account<'info, ClaimerBlessing>,
-    claimer: &mut AccountInfo<'info>,
-    sender_blessing: &mut Account<'info, SenderBlessing>,
-    blessing: Account<'info, Blessing>,
-    admin_param: Account<'info, AdminParam>,
-    program_owner: &mut AccountInfo<'info>,
-    sender: &mut AccountInfo<'info>,
-    system_program: Program<'info, System>,
-    ) -> Result<()> {
-        require_eq!(sender_blessing.revoked, false, CryptoBlessingError::BlessingRevoked);
-        let claim_keys = &mut sender_blessing.claim_keys;
+    claim_key: String
+) -> Result<()> {
+
+    require_eq!(ctx.accounts.sender_blessing.revoked, false, CryptoBlessingError::BlessingRevoked);
+        let claim_keys = ctx.accounts.sender_blessing.claim_keys.clone();
         require_gt!(claim_keys.len(), 0, CryptoBlessingError::NoKeysFound);
         let mut hex_finded = false;
+        let mut claim_key_finded = "".to_string();
         for claim_key_info in claim_keys {
             if claim_key_info.key == digest(claim_key.clone()) {
                 hex_finded = true;
-                claim_key_info.used = true;
+                claim_key_finded = claim_key_info.key;
             }
         }
         require_eq!(hex_finded, true, CryptoBlessingError::ClaimKeyVerifyFailed);
-        require_gt!(sender_blessing.claim_quantity as usize, sender_blessing.claimer_list.len(), CryptoBlessingError::NoBlessingLeft);
+        require_gt!(ctx.accounts.sender_blessing.claim_quantity as usize, ctx.accounts.sender_blessing.claimer_list.len(), CryptoBlessingError::NoBlessingLeft);
     
         // cal the claim amount
         let mut distributed_amount = 0;
-        for status in sender_blessing.claimer_list.iter() {
-            require_neq!(*claimer.key, status.claimer, CryptoBlessingError::RepeatClaimErr);
+        for status in ctx.accounts.sender_blessing.claimer_list.iter() {
+            require_neq!(*ctx.accounts.claimer.key, status.claimer, CryptoBlessingError::RepeatClaimErr);
             distributed_amount += status.distributed_amount;
         }
         let mut distribution_amount = 0;
-        match sender_blessing.claim_type {
+        match ctx.accounts.sender_blessing.claim_type {
             ClaimType::Average=>{
-                distribution_amount = sender_blessing.token_amount / sender_blessing.claim_quantity;
+                distribution_amount = ctx.accounts.sender_blessing.token_amount / ctx.accounts.sender_blessing.claim_quantity;
             },
             ClaimType::Random => {
-                let left_quantity = sender_blessing.claim_quantity - sender_blessing.claimer_list.len() as u64;
+                let left_quantity = ctx.accounts.sender_blessing.claim_quantity - ctx.accounts.sender_blessing.claimer_list.len() as u64;
                 let random_num = random_num();
                 if left_quantity == 1 {
-                    distribution_amount = sender_blessing.token_amount - distributed_amount;
+                    distribution_amount = ctx.accounts.sender_blessing.token_amount - distributed_amount;
                 } else {
-                    distribution_amount = (sender_blessing.token_amount - distributed_amount) / left_quantity * random_num / 10 * 2;
+                    distribution_amount = (ctx.accounts.sender_blessing.token_amount - distributed_amount) / left_quantity * random_num / 10 * 2;
                 }
             }, 
         }
     
-        let mut cbt_token_reward = distribution_amount * admin_param.cbt_reward_ratio as u64;
-        if cbt_token_reward > admin_param.cbt_reward_max {
-            cbt_token_reward = admin_param.cbt_reward_max;
+        let mut cbt_token_reward = distribution_amount * ctx.accounts.admin_param.cbt_reward_ratio as u64;
+        if cbt_token_reward > ctx.accounts.admin_param.cbt_reward_max {
+            cbt_token_reward = ctx.accounts.admin_param.cbt_reward_max;
         }
-    
+        
+        // update the sender_blessing
+        ctx.accounts.sender_blessing.save_claim_key_used(claim_key_finded);
         let clock: Clock = Clock::get().unwrap();
-        sender_blessing.claimer_list.push(ClaimerInfo {
-            claimer: *claimer.key,
-            distributed_amount: distribution_amount,
-            claim_timestamp: clock.unix_timestamp,
-            claim_amount: distribution_amount / 1000 * (1000 - admin_param.claim_tax_rate as u64),
-            tax_amount: distribution_amount / 1000 * admin_param.claim_tax_rate as u64,
-            cbt_token_reward_to_sender_amount: cbt_token_reward,
-        });
+        ctx.accounts.sender_blessing.insert_claimer_list(*ctx.accounts.claimer.key, clock.unix_timestamp, distributed_amount, 
+            distribution_amount / 1000 * (1000 - ctx.accounts.admin_param.claim_tax_rate as u64),
+            distribution_amount / 1000 * ctx.accounts.admin_param.claim_tax_rate as u64,
+            cbt_token_reward,);
+        
+        let amount_to_claimer = distribution_amount / 1000 * (1000 - ctx.accounts.admin_param.claim_tax_rate as u64);
+        **ctx.accounts.sender_blessing.to_account_info().try_borrow_mut_lamports()? -= amount_to_claimer;
+        **ctx.accounts.claimer.to_account_info().try_borrow_mut_lamports()? += amount_to_claimer;
     
-        // transfer the blessing token to sender_blessing account
-        // let ix = anchor_lang::solana_program::system_instruction::transfer(
-        //     &sender_blessing.key(),
-        //     &claimer.key,
-        //     distribution_amount / 1000 * (1000 - admin_param.claim_tax_rate as u64),
-        // );
-        // anchor_lang::solana_program::program::invoke(
-        //     &ix,
-        //     &[
-        //         sender_blessing.to_account_info(),
-        //         claimer.to_account_info(),
-        //     ],
-        // ).expect("transfer to claimer failed");
-
-        let amount_to_claimer = distribution_amount / 1000 * (1000 - admin_param.claim_tax_rate as u64);
-        **sender_blessing.to_account_info().try_borrow_mut_lamports()? -= amount_to_claimer;
-        **claimer.to_account_info().try_borrow_mut_lamports()? += amount_to_claimer;
-    
-        // let ix = anchor_lang::solana_program::system_instruction::transfer(
-        //     &sender_blessing.key(),
-        //     program_owner.key,
-        //     distribution_amount / 1000 * admin_param.claim_tax_rate as u64,
-        // );
-        // anchor_lang::solana_program::program::invoke(
-        //     &ix,
-        //     &[
-        //         sender_blessing.to_account_info(),
-        //         program_owner.to_account_info(),
-        //     ],
-        // ).expect("transfer to program owner failed");
-        let tax_to_program_owner = distribution_amount / 1000 * admin_param.claim_tax_rate as u64;
-        **sender_blessing.to_account_info().try_borrow_mut_lamports()? -= tax_to_program_owner;
-        **program_owner.to_account_info().try_borrow_mut_lamports()? += tax_to_program_owner;
+        let tax_to_program_owner = distribution_amount / 1000 * ctx.accounts.admin_param.claim_tax_rate as u64;
+        **ctx.accounts.sender_blessing.to_account_info().try_borrow_mut_lamports()? -= tax_to_program_owner;
+        **ctx.accounts.program_owner.to_account_info().try_borrow_mut_lamports()? += tax_to_program_owner;
     
         // transfer the cbt token to sender
         // let sender_blessing_pk = sender_blessing.key().clone();
@@ -131,23 +101,68 @@ fn inner_claim_blessing<'info>(
         // );
         // anchor_spl::token::transfer(cpi_ctx, cbt_token_reward)?;
     
-        // TODO mint the NFT token to claimer
-    
-        claimer_blessing.save(*claimer.key, sender_blessing.sender, sender_blessing.blessing_id, 
-            sender_blessing.blessing_img.clone(), 
-            distribution_amount / 1000 * (1000 - admin_param.claim_tax_rate as u64),
-            distribution_amount / 1000 * admin_param.claim_tax_rate as u64)
-    }
-
-pub fn claim_blessing(ctx: Context<ClaimBlessing>, 
-    blessing_title: String,
-    claim_key: String
-) -> Result<()> {
-    inner_claim_blessing(blessing_title, claim_key, 
-        &mut ctx.accounts.claimer_blessing, &mut ctx.accounts.claimer.to_account_info(), &mut ctx.accounts.sender_blessing.to_owned(), 
-        ctx.accounts.blessing.to_owned(), ctx.accounts.admin_param.to_owned(), 
-        &mut ctx.accounts.program_owner.to_owned(), &mut ctx.accounts.sender.to_owned(),
-        ctx.accounts.system_program.to_owned())
+        // mint the NFT token to claimer
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_accounts = MintTo {
+            mint: ctx.accounts.mint.to_account_info(),
+            to: ctx.accounts.token_account.to_account_info(),
+            authority: ctx.accounts.payer.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        // let result = mint_to(cpi_ctx, 1);
+        // if let Err(_) = result {
+        //     msg!("Token mint failed !!!");
+        // } else {
+        //     let accounts = vec![
+        //         token_metadata_program.to_account_info(),
+        //         metadata.to_account_info(),
+        //         mint.to_account_info(),
+        //         mint_authority.to_account_info(),
+        //         payer.to_account_info(),
+        //         token_program.to_account_info(),
+        //         system_program.to_account_info(),
+        //     ];
+        //     let creators = vec![
+        //         mpl_token_metadata::state::Creator {
+        //             address: mint.key.clone(),
+        //             verified: false,
+        //             share: 100,
+        //         },
+        //         mpl_token_metadata::state::Creator {
+        //             address: mint_authority.key(),
+        //             verified: false,
+        //             share: 0,
+        //         },
+        //     ];
+        //     let result = invoke(
+        //         &create_metadata_accounts_v2(
+        //             token_metadata_program.key(),
+        //             metadata.key(),
+        //             mint.key(),
+        //             mint_authority.key(),
+        //             payer.key(),
+        //             payer.key(),
+        //             blessing_title,
+        //             "CBNFT".to_string(),
+        //             blessing.ipfs.clone(),
+        //             Some(creators),
+        //             1,
+        //             true,
+        //             false,
+        //             None,
+        //             None,
+        //         ),
+        //         &accounts
+        //     );
+        //     if let Err(_) = result {
+        //         msg!("Token metadata creation failed !!!");
+        //     }
+        // }
+        
+        ctx.accounts.claimer_blessing.save(*ctx.accounts.claimer.key, ctx.accounts.sender_blessing.sender, ctx.accounts.sender_blessing.blessing_id, 
+            ctx.accounts.sender_blessing.blessing_img.clone(), 
+            distribution_amount / 1000 * (1000 - ctx.accounts.admin_param.claim_tax_rate as u64),
+            distribution_amount / 1000 * ctx.accounts.admin_param.claim_tax_rate as u64)
 }
 
 // pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
@@ -179,6 +194,24 @@ pub struct ClaimBlessing<'info> {
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub sender: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub mint_authority: Signer<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub mint: UncheckedAccount<'info>,
+    pub token_program: Program<'info, Token>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub metadata: UncheckedAccount<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub token_account: UncheckedAccount<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub token_metadata_program: UncheckedAccount<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub payer: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
 }

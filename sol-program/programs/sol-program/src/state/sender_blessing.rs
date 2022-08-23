@@ -68,5 +68,26 @@ impl SenderBlessing {
         Ok(())
     }
 
+    pub fn insert_claimer_list(&mut self, claimer: Pubkey, claim_timestamp: i64, distributed_amount: u64, claim_amount: u64, tax_amount: u64, cbt_token_reward_to_sender_amount: u64) {
+        msg!("insert claimer list");
+        self.claimer_list.push(ClaimerInfo {
+            claimer,
+            claim_timestamp,
+            distributed_amount,
+            claim_amount,
+            tax_amount,
+            cbt_token_reward_to_sender_amount,
+        });
+    }
+
+    pub fn save_claim_key_used(&mut self, key: String) {
+        for claim_key in self.claim_keys.iter_mut() {
+            if claim_key.key == key {
+                claim_key.used = true;
+                break;
+            }
+        }
+    }
+
 
 }
