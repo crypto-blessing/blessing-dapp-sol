@@ -81,26 +81,6 @@ pub fn claim_blessing(ctx: Context<ClaimBlessing>,
         **ctx.accounts.sender_blessing.to_account_info().try_borrow_mut_lamports()? -= tax_to_program_owner;
         **ctx.accounts.program_owner.to_account_info().try_borrow_mut_lamports()? += tax_to_program_owner;
     
-        // transfer the cbt token to sender
-        // let sender_blessing_pk = sender_blessing.key().clone();
-        // let inner = vec![
-        //     b"state".as_ref(),
-        //     sender_blessing_pk.as_ref(),
-        //     sender.key.as_ref(),
-        // ];
-        // let outer = vec![inner.as_slice()];
-        // let transfer_instruction = Transfer{
-        //     from: sender_blessing.to_account_info(),
-        //     to: sender.to_account_info(),
-        //     authority: sender_blessing.to_account_info(),
-        // };
-        // let cpi_ctx = CpiContext::new_with_signer(
-        //     token_program.to_account_info(),
-        //     transfer_instruction,
-        //     outer.as_slice(),
-        // );
-        // anchor_spl::token::transfer(cpi_ctx, cbt_token_reward)?;
-    
         // mint the NFT token to claimer
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let cpi_accounts = MintTo {
@@ -109,60 +89,62 @@ pub fn claim_blessing(ctx: Context<ClaimBlessing>,
             authority: ctx.accounts.payer.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-        // let result = mint_to(cpi_ctx, 1);
-        // if let Err(_) = result {
-        //     msg!("Token mint failed !!!");
-        // } else {
-        //     let accounts = vec![
-        //         token_metadata_program.to_account_info(),
-        //         metadata.to_account_info(),
-        //         mint.to_account_info(),
-        //         mint_authority.to_account_info(),
-        //         payer.to_account_info(),
-        //         token_program.to_account_info(),
-        //         system_program.to_account_info(),
-        //     ];
-        //     let creators = vec![
-        //         mpl_token_metadata::state::Creator {
-        //             address: mint.key.clone(),
-        //             verified: false,
-        //             share: 100,
-        //         },
-        //         mpl_token_metadata::state::Creator {
-        //             address: mint_authority.key(),
-        //             verified: false,
-        //             share: 0,
-        //         },
-        //     ];
-        //     let result = invoke(
-        //         &create_metadata_accounts_v2(
-        //             token_metadata_program.key(),
-        //             metadata.key(),
-        //             mint.key(),
-        //             mint_authority.key(),
-        //             payer.key(),
-        //             payer.key(),
-        //             blessing_title,
-        //             "CBNFT".to_string(),
-        //             blessing.ipfs.clone(),
-        //             Some(creators),
-        //             1,
-        //             true,
-        //             false,
-        //             None,
-        //             None,
-        //         ),
-        //         &accounts
-        //     );
-        //     if let Err(_) = result {
-        //         msg!("Token metadata creation failed !!!");
-        //     }
-        // }
+        let result = mint_to(cpi_ctx, 1);
+        if let Err(_) = result {
+            msg!("Token mint failed !!!");
+        } else {
+            let accounts = vec![
+                ctx.accounts.token_metadata_program.to_account_info(),
+                ctx.accounts.metadata.to_account_info(),
+                ctx.accounts.mint.to_account_info(),
+                ctx.accounts.mint_authority.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+                ctx.accounts.rent.to_account_info(),
+            ];
+            let creators = vec![
+                mpl_token_metadata::state::Creator {
+                    address: ctx.accounts.mint.key.clone(),
+                    verified: false,
+                    share: 100,
+                },
+                mpl_token_metadata::state::Creator {
+                    address: ctx.accounts.mint_authority.key(),
+                    verified: false,
+                    share: 0,
+                },
+            ];
+            let result = invoke(
+                &create_metadata_accounts_v2(
+                    ctx.accounts.token_metadata_program.key(),
+                    ctx.accounts.metadata.key(),
+                    ctx.accounts.mint.key(),
+                    ctx.accounts.mint_authority.key(),
+                    ctx.accounts.payer.key(),
+                    ctx.accounts.payer.key(),
+                    blessing_title,
+                    "CBNFT".to_string(),
+                    ctx.accounts.blessing.ipfs.clone(),
+                    Some(creators),
+                    1,
+                    true,
+                    false,
+                    None,
+                    None,
+                ),
+                &accounts
+            );
+            if let Err(_) = result {
+                msg!("Token metadata creation failed !!!");
+            }
+        }
         
         ctx.accounts.claimer_blessing.save(*ctx.accounts.claimer.key, ctx.accounts.sender_blessing.sender, ctx.accounts.sender_blessing.blessing_id, 
             ctx.accounts.sender_blessing.blessing_img.clone(), 
             distribution_amount / 1000 * (1000 - ctx.accounts.admin_param.claim_tax_rate as u64),
             distribution_amount / 1000 * ctx.accounts.admin_param.claim_tax_rate as u64)
+
 }
 
 // pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
@@ -214,6 +196,9 @@ pub struct ClaimBlessing<'info> {
     pub payer: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
+
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub rent: AccountInfo<'info>,
 }
 
 // #[derive(Accounts)]

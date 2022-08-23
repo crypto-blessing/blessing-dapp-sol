@@ -19,9 +19,9 @@ import {
 describe('crypto-blessing', () => {
 
     // Configure the client to use the local cluster.
-    const provider = anchor.Provider.env()
-
+    const provider = anchor.AnchorProvider.env()
     anchor.setProvider(provider);
+
     const program = anchor.workspace.SolProgram;
     const senderKeypair = program.provider.wallet.payer
     const sender = program.provider.wallet.publicKey
@@ -58,7 +58,7 @@ describe('crypto-blessing', () => {
                 provider.wallet.publicKey,
             )
         );
-        const signature = await provider.send(tx, [tokenMint]);
+        const signature = await provider.sendAndConfirm(tx, [tokenMint]);
 
         console.log(`[${tokenMint.publicKey}] Created new mint account at ${signature}`);
 
@@ -241,7 +241,7 @@ describe('crypto-blessing', () => {
             toPubkey: claimer.publicKey,
             lamports: 5 * anchor.web3.LAMPORTS_PER_SOL,
         }));
-        const sigTxFund = await provider.send(txFund);
+        const sigTxFund = await provider.sendAndConfirm(txFund);
         console.log(`[${claimer.publicKey.toBase58()}] Funded new account with 5 SOL: ${sigTxFund}`);
     }
 
@@ -256,7 +256,35 @@ describe('crypto-blessing', () => {
         ))[0];
     };
 
-    it('can claim blessing 2', async () => {
+    const sender_blessing3 = anchor.web3.Keypair.generate();
+    const sender3 = anchor.web3.Keypair.generate();
+    it('can send blessing 3', async () => {
+
+        console.log('sender_blessing3', sender_blessing3.publicKey)
+        await fund_claimer(sender3);
+        let beforeBalance = await provider.connection.getBalance(sender3.publicKey);
+        console.log('sender3 beforeBalance', beforeBalance / LAMPORTS_PER_SOL)
+       
+        await program.rpc.sendBlessing(
+            new anchor.BN(1 * LAMPORTS_PER_SOL) , 
+            new anchor.BN(10), 
+            {random:{}}, 
+            [sha256.sha256(claimKey1), sha256.sha256(claimKey2),sha256.sha256(claimKey3),sha256.sha256(claimKey4),sha256.sha256(claimKey5),
+            sha256.sha256(claimKey6),sha256.sha256(claimKey7),sha256.sha256(claimKey8),sha256.sha256(claimKey9),sha256.sha256(claimKey10)],
+        {
+            accounts: {
+                senderBlessing: sender_blessing3.publicKey,
+                sender: sender3.publicKey,
+                blessing: blessing.publicKey,
+                blessingOwner: designer,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+            signers: [sender3, sender_blessing3],
+        });
+
+    });
+
+    it('can claim blessing 3', async () => {
 
         const claimer1 = anchor.web3.Keypair.generate()
         const claimer2 = anchor.web3.Keypair.generate()
@@ -338,7 +366,7 @@ describe('crypto-blessing', () => {
             )
         );
 
-        // const res = await provider.sendAndConfirm(mint_tx, [mintKey]);
+        const res = await provider.sendAndConfirm(mint_tx, [mintKey]);
         console.log("Mint key: ", mintKey.publicKey.toString());
         console.log("User: ", provider.wallet.publicKey.toString());
 
@@ -349,22 +377,23 @@ describe('crypto-blessing', () => {
         {
             accounts: {
                 claimerBlessing: claimer_blessing2.publicKey,
-                claimer: claimer2.publicKey,
-                senderBlessing: sender_blessing2.publicKey,
+                claimer: sender,
+                senderBlessing: sender_blessing3.publicKey,
                 blessing: blessing.publicKey,
                 adminParam: admin_param.publicKey,
                 programOwner: sender,
-                sender: sender,
+                sender: sender3.publicKey,
                 systemProgram: anchor.web3.SystemProgram.programId,
-                mintAuthority: claimer2.publicKey,
+                mintAuthority: sender,
                 mint: mintKey.publicKey,
                 tokenAccount: nftTokenAccount,
                 tokenProgram: TOKEN_PROGRAM_ID,
                 metadata: metadataAddress,
                 tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-                payer: claimer2.publicKey,
+                payer: sender,
+                rent: anchor.web3.SYSVAR_RENT_PUBKEY,
             },
-            signers: [claimer2, claimer_blessing2],
+            signers: [claimer_blessing2],
         });
 
         claimer2Balance = await provider.connection.getBalance(claimer2.publicKey);
@@ -374,7 +403,7 @@ describe('crypto-blessing', () => {
         console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
 
         const sender_blessing_res = await program.account.senderBlessing.fetch(sender_blessing2.publicKey);
-        console.log('sender_blessing_res:', sender_blessing_res.claimerList)
+        console.log('sender_blessing_res:', sender_blessing_res)
 
         const claimerblessings = await program.account.claimerBlessing.all();
         console.log('claimerblessings:', claimerblessings)
