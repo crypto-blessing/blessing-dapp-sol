@@ -4,16 +4,14 @@ import sha256 from 'js-sha256';
 
 import * as spl from '@solana/spl-token';
 import { clusterApiUrl, Connection, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
-
-import anchor from "@project-serum/anchor";
-
 import {
     TOKEN_PROGRAM_ID,
     createAssociatedTokenAccountInstruction,
     getAssociatedTokenAddress,
     createInitializeMintInstruction,
     MINT_SIZE,
-} from "@solana/spl-token";
+  } from "@solana/spl-token";
+import anchor from "@project-serum/anchor";
 
 
 describe('crypto-blessing', () => {
@@ -23,47 +21,13 @@ describe('crypto-blessing', () => {
     anchor.setProvider(provider);
 
     const program = anchor.workspace.SolProgram;
-    const senderKeypair = program.provider.wallet.payer
     const sender = program.provider.wallet.publicKey
-    const fakeSender = anchor.web3.Keypair.generate()
     const admin_param = anchor.web3.Keypair.generate()
 
     const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
         "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
     );
 
-    const createCBT = async () => {
-        const tokenMint = new anchor.web3.Keypair();
-        const lamportsForMint = await provider.connection.getMinimumBalanceForRentExemption(spl.MintLayout.span);
-        let tx = new anchor.web3.Transaction();
-
-        // Allocate mint
-        tx.add(
-            anchor.web3.SystemProgram.createAccount({
-                programId: spl.TOKEN_PROGRAM_ID,
-                space: spl.MintLayout.span,
-                fromPubkey: provider.wallet.publicKey,
-                newAccountPubkey: tokenMint.publicKey,
-                lamports: lamportsForMint,
-            })
-        )
-
-        // Allocate wallet account
-        tx.add(
-            spl.Token.createInitMintInstruction(
-                spl.TOKEN_PROGRAM_ID,
-                tokenMint.publicKey,
-                9,
-                provider.wallet.publicKey,
-                provider.wallet.publicKey,
-            )
-        );
-        const signature = await provider.sendAndConfirm(tx, [tokenMint]);
-
-        console.log(`[${tokenMint.publicKey}] Created new mint account at ${signature}`);
-
-        return tokenMint.publicKey;
-    }
 
 
     it("Is initialized!", async () => {
@@ -196,42 +160,42 @@ describe('crypto-blessing', () => {
 
     const sender_blessing2 = anchor.web3.Keypair.generate();
 
-    it('can send blessing 2', async () => {
+    // it('can send blessing 2', async () => {
 
-        console.log('sender_blessing2', sender_blessing2.publicKey)
+    //     console.log('sender_blessing2', sender_blessing2.publicKey)
 
-        let beforeBalance = await provider.connection.getBalance(sender);
-        console.log('beforeBalance', beforeBalance / LAMPORTS_PER_SOL)
+    //     let beforeBalance = await provider.connection.getBalance(sender);
+    //     console.log('beforeBalance', beforeBalance / LAMPORTS_PER_SOL)
        
-        await program.rpc.sendBlessing(
-            new anchor.BN(1 * LAMPORTS_PER_SOL) , 
-            new anchor.BN(10), 
-            {random:{}}, 
-            [sha256.sha256(claimKey1), sha256.sha256(claimKey2),sha256.sha256(claimKey3),sha256.sha256(claimKey4),sha256.sha256(claimKey5),
-            sha256.sha256(claimKey6),sha256.sha256(claimKey7),sha256.sha256(claimKey8),sha256.sha256(claimKey9),sha256.sha256(claimKey10)],
-        {
-            accounts: {
-                senderBlessing: sender_blessing2.publicKey,
-                sender: sender,
-                blessing: blessing.publicKey,
-                blessingOwner: designer,
-                systemProgram: anchor.web3.SystemProgram.programId,
-            },
-            signers: [sender_blessing2],
-        });
+    //     await program.rpc.sendBlessing(
+    //         new anchor.BN(1 * LAMPORTS_PER_SOL) , 
+    //         new anchor.BN(10), 
+    //         {random:{}}, 
+    //         [sha256.sha256(claimKey1), sha256.sha256(claimKey2),sha256.sha256(claimKey3),sha256.sha256(claimKey4),sha256.sha256(claimKey5),
+    //         sha256.sha256(claimKey6),sha256.sha256(claimKey7),sha256.sha256(claimKey8),sha256.sha256(claimKey9),sha256.sha256(claimKey10)],
+    //     {
+    //         accounts: {
+    //             senderBlessing: sender_blessing2.publicKey,
+    //             sender: sender,
+    //             blessing: blessing.publicKey,
+    //             blessingOwner: designer,
+    //             systemProgram: anchor.web3.SystemProgram.programId,
+    //         },
+    //         signers: [sender_blessing2],
+    //     });
 
-        // Fetch the account details of the created tweet.
-        const blessings = await program.account.senderBlessing.all();
-        console.log('blessings:', blessings)
-        let afterBalance = await provider.connection.getBalance(sender);
-        console.log('afterBalance', afterBalance / LAMPORTS_PER_SOL)
-        let senderBlessingBalance = await provider.connection.getBalance(sender_blessing2.publicKey);
-        console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
-        let blessingOwnerBalance = await provider.connection.getBalance(designer);
-        console.log('blessingOwnerBalance', blessingOwnerBalance / LAMPORTS_PER_SOL)
-        let after_blessing_owner = await provider.connection.getBalance(designer);
-        console.log('after_blessing_owner', after_blessing_owner / LAMPORTS_PER_SOL)
-    });
+    //     // Fetch the account details of the created tweet.
+    //     const blessings = await program.account.senderBlessing.all();
+    //     console.log('blessings:', blessings)
+    //     let afterBalance = await provider.connection.getBalance(sender);
+    //     console.log('afterBalance', afterBalance / LAMPORTS_PER_SOL)
+    //     let senderBlessingBalance = await provider.connection.getBalance(sender_blessing2.publicKey);
+    //     console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
+    //     let blessingOwnerBalance = await provider.connection.getBalance(designer);
+    //     console.log('blessingOwnerBalance', blessingOwnerBalance / LAMPORTS_PER_SOL)
+    //     let after_blessing_owner = await provider.connection.getBalance(designer);
+    //     console.log('after_blessing_owner', after_blessing_owner / LAMPORTS_PER_SOL)
+    // });
 
     const fund_claimer = async (claimer) => {
         // Fund user with some SOL
@@ -239,22 +203,11 @@ describe('crypto-blessing', () => {
         txFund.add(anchor.web3.SystemProgram.transfer({
             fromPubkey: sender,
             toPubkey: claimer.publicKey,
-            lamports: 5 * anchor.web3.LAMPORTS_PER_SOL,
+            lamports: 2 * anchor.web3.LAMPORTS_PER_SOL,
         }));
         const sigTxFund = await provider.sendAndConfirm(txFund);
-        console.log(`[${claimer.publicKey.toBase58()}] Funded new account with 5 SOL: ${sigTxFund}`);
+        console.log(`[${claimer.publicKey.toBase58()}] Funded new account with 2 SOL: ${sigTxFund}`);
     }
-
-    const getMetadata = async (mint) => {
-        return (await anchor.web3.PublicKey.findProgramAddress(
-          [
-            Buffer.from("metadata"),
-            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-            mint.toBuffer(),
-          ],
-          TOKEN_METADATA_PROGRAM_ID
-        ))[0];
-    };
 
     const sender_blessing3 = anchor.web3.Keypair.generate();
     const sender3 = anchor.web3.Keypair.generate();
@@ -283,132 +236,95 @@ describe('crypto-blessing', () => {
         });
 
     });
+    console.log(`claimeKey2: ${claimKey2}`)
+    console.log(`sender_blessing3.publicKey: ${sender_blessing3.publicKey.toBase58()}`)
+    console.log(`sender3.publicKey: ${sender3.publicKey.toBase58()}`)
+    console.log(`blessing.publicKey: ${blessing.publicKey.toBase58()}`)
 
-    it('can claim blessing 3', async () => {
+    // it('can claim blessing 3', async () => {
 
-        const claimer1 = anchor.web3.Keypair.generate()
-        const claimer2 = anchor.web3.Keypair.generate()
-        const claimer3 = anchor.web3.Keypair.generate()
-        const claimer4 = anchor.web3.Keypair.generate()
-        const claimer5 = anchor.web3.Keypair.generate()
-        const claimer6 = anchor.web3.Keypair.generate()
-        const claimer7 = anchor.web3.Keypair.generate()
-        const claimer8 = anchor.web3.Keypair.generate()
-        const claimer9 = anchor.web3.Keypair.generate()
-        const claimer10 = anchor.web3.Keypair.generate()
+    //     const claimer1 = anchor.web3.Keypair.generate()
+    //     const claimer2 = anchor.web3.Keypair.generate()
+    //     const claimer3 = anchor.web3.Keypair.generate()
+    //     const claimer4 = anchor.web3.Keypair.generate()
+    //     const claimer5 = anchor.web3.Keypair.generate()
+    //     const claimer6 = anchor.web3.Keypair.generate()
+    //     const claimer7 = anchor.web3.Keypair.generate()
+    //     const claimer8 = anchor.web3.Keypair.generate()
+    //     const claimer9 = anchor.web3.Keypair.generate()
+    //     const claimer10 = anchor.web3.Keypair.generate()
 
-        const claimer_blessing1 = anchor.web3.Keypair.generate();
-        await fund_claimer(claimer1);
-
-        let claimer1Balance = await provider.connection.getBalance(claimer1.publicKey);
-        console.log('claimer1', claimer1Balance / LAMPORTS_PER_SOL)
-
-        // await createCBT()
-
-        // await program.rpc.claimBlessing(
-        //     'claim title', claimKey1,
-        // {
-        //     accounts: {
-        //         claimerBlessing: claimer_blessing1.publicKey,
-        //         claimer: claimer1.publicKey,
-        //         senderBlessing: sender_blessing2.publicKey,
-        //         blessing: blessing.publicKey,
-        //         adminParam: admin_param.publicKey,
-        //         programOwner: sender,
-        //         sender: sender,
-        //         systemProgram: anchor.web3.SystemProgram.programId,
-        //     },
-        //     signers: [claimer1, claimer_blessing1],
-        // });
-
-        claimer1Balance = await provider.connection.getBalance(claimer1.publicKey);
-        console.log('claimer1', claimer1Balance / LAMPORTS_PER_SOL)
+    //     const claimer_blessing2 = anchor.web3.Keypair.generate();
 
 
-        const claimer_blessing2 = anchor.web3.Keypair.generate();
-        await fund_claimer(claimer2);
+    //     const mintKeypair = anchor.web3.Keypair.generate();
 
-        let claimer2Balance = await provider.connection.getBalance(claimer2.publicKey);
-        console.log('claimer2', claimer2Balance / LAMPORTS_PER_SOL)
+    //     const tokenAddress = await anchor.utils.token.associatedAddress({
+    //         mint: mintKeypair.publicKey,
+    //         owner: sender
+    //     });
+    //     console.log(`New token: ${mintKeypair.publicKey}, tokenAddress: ${tokenAddress}`);
 
-        // await createCBT()
+    //     // Derive the metadata and master edition addresses
 
-        const lamports = await program.provider.connection.getMinimumBalanceForRentExemption(MINT_SIZE);
-        console.log("Mint Account Lamports: ", lamports);
+    //     const metadataAddress = (await anchor.web3.PublicKey.findProgramAddress(
+    //     [
+    //         Buffer.from("metadata"),
+    //         TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+    //         mintKeypair.publicKey.toBuffer(),
+    //     ],
+    //     TOKEN_METADATA_PROGRAM_ID
+    //     ))[0];
+    //     console.log(`Metadata initialized, metadataAddress: ${metadataAddress}`);
 
-        const mintKey = anchor.web3.Keypair.generate();
+    //     const masterEditionAddress = (await anchor.web3.PublicKey.findProgramAddress(
+    //     [
+    //         Buffer.from("metadata"),
+    //         TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+    //         mintKeypair.publicKey.toBuffer(),
+    //         Buffer.from("edition"),
+    //     ],
+    //     TOKEN_METADATA_PROGRAM_ID
+    //     ))[0];
+    //     console.log(`Master edition metadata initialized, masterEditionAddress: ${masterEditionAddress}`);
 
-        const nftTokenAccount = await getAssociatedTokenAddress(
-            mintKey.publicKey,
-            provider.wallet.publicKey
-        );
-        console.log("NFT Account: ", nftTokenAccount.toBase58());
+    //     const testNftTitle = "CryptoBlessing";
+    //     const testNftUri = "https://raw.githubusercontent.com/Coding-and-Crypto/Solana-NFT-Marketplace/master/assets/example.json";
 
-        const mint_tx = new anchor.web3.Transaction().add(
-            anchor.web3.SystemProgram.createAccount({
-                fromPubkey: provider.wallet.publicKey,
-                newAccountPubkey: mintKey.publicKey,
-                space: MINT_SIZE,
-                programId: TOKEN_PROGRAM_ID,
-                lamports,
-            }),
-            createInitializeMintInstruction(
-                mintKey.publicKey,
-                0,
-                provider.wallet.publicKey,
-                provider.wallet.publicKey,
-            ),
-            createAssociatedTokenAccountInstruction(
-                provider.wallet.publicKey,
-                nftTokenAccount,
-                provider.wallet.publicKey,
-                mintKey.publicKey
-            )
-        );
+    //     await program.methods.claimBlessing(
+    //         testNftTitle, testNftUri, claimKey2
+    //     ).accounts({
+    //         claimerBlessing: claimer_blessing2.publicKey,
+    //         claimer: sender,
+    //         senderBlessing: sender_blessing3.publicKey,
+    //         blessing: blessing.publicKey,
+    //         adminParam: admin_param.publicKey,
+    //         programOwner: sender,
+    //         sender: sender3.publicKey,
 
-        const res = await provider.sendAndConfirm(mint_tx, [mintKey]);
-        console.log("Mint key: ", mintKey.publicKey.toString());
-        console.log("User: ", provider.wallet.publicKey.toString());
+    //         masterEdition: masterEditionAddress,
+    //         metadata: metadataAddress,
 
-        const metadataAddress = await getMetadata(mintKey.publicKey);
-        console.log("Metadata address: ", metadataAddress.toBase58());
-        await program.rpc.claimBlessing(
-            'claim title', claimKey2,
-        {
-            accounts: {
-                claimerBlessing: claimer_blessing2.publicKey,
-                claimer: sender,
-                senderBlessing: sender_blessing3.publicKey,
-                blessing: blessing.publicKey,
-                adminParam: admin_param.publicKey,
-                programOwner: sender,
-                sender: sender3.publicKey,
-                systemProgram: anchor.web3.SystemProgram.programId,
-                mintAuthority: sender,
-                mint: mintKey.publicKey,
-                tokenAccount: nftTokenAccount,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                metadata: metadataAddress,
-                tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-                payer: sender,
-                rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-            },
-            signers: [claimer_blessing2],
-        });
+    //         mint: mintKeypair.publicKey,
+    //         tokenAccount: tokenAddress,
+    //         mintAuthority: sender,
+    //         tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
 
-        claimer2Balance = await provider.connection.getBalance(claimer2.publicKey);
-        console.log('claimer2', claimer2Balance / LAMPORTS_PER_SOL)
+    //     }).signers([claimer_blessing2, mintKeypair]).rpc()
 
-        let senderBlessingBalance = await provider.connection.getBalance(sender_blessing2.publicKey);
-        console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
+    //     claimer2Balance = await provider.connection.getBalance(claimer2.publicKey);
+    //     console.log('claimer2', claimer2Balance / LAMPORTS_PER_SOL)
 
-        const sender_blessing_res = await program.account.senderBlessing.fetch(sender_blessing2.publicKey);
-        console.log('sender_blessing_res:', sender_blessing_res)
+    //     let senderBlessingBalance = await provider.connection.getBalance(sender_blessing3.publicKey);
+    //     console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
 
-        const claimerblessings = await program.account.claimerBlessing.all();
-        console.log('claimerblessings:', claimerblessings)
+    //     const sender_blessing_res = await program.account.senderBlessing.fetch(sender_blessing3.publicKey);
+    //     console.log('sender_blessing_res:', sender_blessing_res)
 
-    })
+    //     const claimerblessings = await program.account.claimerBlessing.all();
+    //     console.log('claimerblessings:', claimerblessings)
+
+    // })
 
 
 });

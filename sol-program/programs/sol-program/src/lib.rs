@@ -10,6 +10,8 @@ declare_id!("2tHZEpRNAW7a4NLqiyYC6G9xwySHbDs4CS6SnAiHux4F");
 
 #[program]
 pub mod sol_program {
+    use anchor_spl::token::Mint;
+
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
@@ -61,18 +63,20 @@ pub mod sol_program {
     }
 
     pub fn claim_blessing(ctx: Context<ClaimBlessing>, 
-        blessing_title: String,
+        metadata_title: String, 
+        metadata_uri: String,
         claim_key: String
     ) -> Result<()> {
-        instructions::claim_blessing::claim_blessing(ctx, blessing_title, claim_key)
+        instructions::claim_blessing::claim_blessing(ctx, metadata_title, metadata_uri, claim_key)
     }
 
-    // pub fn claim_blessing_with_new_claimer(ctx: Context<ClaimBlessingWithNewClaimer>, 
-    //     blessing_title: String,
-    //     claim_key: String
-    // ) -> Result<()> {
-    //     instructions::claim_blessing::claim_blessing_with_new_claimer(ctx, blessing_title, claim_key)
-    // }
+    pub fn mint_nft(ctx: Context<MintNft>, 
+        metadata_title: String, 
+        metadata_symbol: String, 
+        metadata_uri: String,
+    ) -> Result<()> {
+        instructions::mint_nft::mint_nft(ctx, metadata_title, metadata_symbol, metadata_uri)
+    }
 
 }
 
