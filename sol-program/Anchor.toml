@@ -1,10 +1,10 @@
 [features]
 seeds = false
 [programs.localnet]
-sol_program = "2tHZEpRNAW7a4NLqiyYC6G9xwySHbDs4CS6SnAiHux4F"
+sol_program = "7SAgeY5ywEh6RaZDvo1t8Gwy23ZdTbk9taL6LMgtYdvz"
 
 [programs.devnet]
-sol_program = "2tHZEpRNAW7a4NLqiyYC6G9xwySHbDs4CS6SnAiHux4F"
+sol_program = "7SAgeY5ywEh6RaZDvo1t8Gwy23ZdTbk9taL6LMgtYdvz"
 
 [registry]
 url = "https://anchor.projectserum.com"

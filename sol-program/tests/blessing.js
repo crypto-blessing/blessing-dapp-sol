@@ -241,90 +241,85 @@ describe('crypto-blessing', () => {
     console.log(`sender3.publicKey: ${sender3.publicKey.toBase58()}`)
     console.log(`blessing.publicKey: ${blessing.publicKey.toBase58()}`)
 
-    // it('can claim blessing 3', async () => {
+    it('can claim blessing 3', async () => {
 
-    //     const claimer1 = anchor.web3.Keypair.generate()
-    //     const claimer2 = anchor.web3.Keypair.generate()
-    //     const claimer3 = anchor.web3.Keypair.generate()
-    //     const claimer4 = anchor.web3.Keypair.generate()
-    //     const claimer5 = anchor.web3.Keypair.generate()
-    //     const claimer6 = anchor.web3.Keypair.generate()
-    //     const claimer7 = anchor.web3.Keypair.generate()
-    //     const claimer8 = anchor.web3.Keypair.generate()
-    //     const claimer9 = anchor.web3.Keypair.generate()
-    //     const claimer10 = anchor.web3.Keypair.generate()
+        const claimer1 = anchor.web3.Keypair.generate()
+        const claimer2 = anchor.web3.Keypair.generate()
+        const claimer3 = anchor.web3.Keypair.generate()
+        const claimer4 = anchor.web3.Keypair.generate()
+        const claimer5 = anchor.web3.Keypair.generate()
+        const claimer6 = anchor.web3.Keypair.generate()
+        const claimer7 = anchor.web3.Keypair.generate()
+        const claimer8 = anchor.web3.Keypair.generate()
+        const claimer9 = anchor.web3.Keypair.generate()
+        const claimer10 = anchor.web3.Keypair.generate()
 
-    //     const claimer_blessing2 = anchor.web3.Keypair.generate();
+        const claimer_blessing2 = anchor.web3.Keypair.generate();
 
 
-    //     const mintKeypair = anchor.web3.Keypair.generate();
+        const mintKeypair = anchor.web3.Keypair.generate();
 
-    //     const tokenAddress = await anchor.utils.token.associatedAddress({
-    //         mint: mintKeypair.publicKey,
-    //         owner: sender
-    //     });
-    //     console.log(`New token: ${mintKeypair.publicKey}, tokenAddress: ${tokenAddress}`);
+        const tokenAddress = await anchor.utils.token.associatedAddress({
+            mint: mintKeypair.publicKey,
+            owner: sender
+        });
+        console.log(`New token: ${mintKeypair.publicKey}, tokenAddress: ${tokenAddress}`);
 
-    //     // Derive the metadata and master edition addresses
+        // Derive the metadata and master edition addresses
 
-    //     const metadataAddress = (await anchor.web3.PublicKey.findProgramAddress(
-    //     [
-    //         Buffer.from("metadata"),
-    //         TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-    //         mintKeypair.publicKey.toBuffer(),
-    //     ],
-    //     TOKEN_METADATA_PROGRAM_ID
-    //     ))[0];
-    //     console.log(`Metadata initialized, metadataAddress: ${metadataAddress}`);
+        const metadataAddress = (await anchor.web3.PublicKey.findProgramAddress(
+        [
+            Buffer.from("metadata"),
+            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+            mintKeypair.publicKey.toBuffer(),
+        ],
+        TOKEN_METADATA_PROGRAM_ID
+        ))[0];
+        console.log(`Metadata initialized, metadataAddress: ${metadataAddress}`);
 
-    //     const masterEditionAddress = (await anchor.web3.PublicKey.findProgramAddress(
-    //     [
-    //         Buffer.from("metadata"),
-    //         TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-    //         mintKeypair.publicKey.toBuffer(),
-    //         Buffer.from("edition"),
-    //     ],
-    //     TOKEN_METADATA_PROGRAM_ID
-    //     ))[0];
-    //     console.log(`Master edition metadata initialized, masterEditionAddress: ${masterEditionAddress}`);
+        const masterEditionAddress = (await anchor.web3.PublicKey.findProgramAddress(
+        [
+            Buffer.from("metadata"),
+            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+            mintKeypair.publicKey.toBuffer(),
+            Buffer.from("edition"),
+        ],
+        TOKEN_METADATA_PROGRAM_ID
+        ))[0];
+        console.log(`Master edition metadata initialized, masterEditionAddress: ${masterEditionAddress}`);
 
-    //     const testNftTitle = "CryptoBlessing";
-    //     const testNftUri = "https://raw.githubusercontent.com/Coding-and-Crypto/Solana-NFT-Marketplace/master/assets/example.json";
+        const testNftTitle = "CryptoBlessing";
+        const testNftUri = "https://raw.githubusercontent.com/Coding-and-Crypto/Solana-NFT-Marketplace/master/assets/example.json";
 
-    //     await program.methods.claimBlessing(
-    //         testNftTitle, testNftUri, claimKey2
-    //     ).accounts({
-    //         claimerBlessing: claimer_blessing2.publicKey,
-    //         claimer: sender,
-    //         senderBlessing: sender_blessing3.publicKey,
-    //         blessing: blessing.publicKey,
-    //         adminParam: admin_param.publicKey,
-    //         programOwner: sender,
-    //         sender: sender3.publicKey,
+        await program.methods.claimBlessing(
+            testNftTitle, testNftUri, claimKey2
+        ).accounts({
+            claimerBlessing: claimer_blessing2.publicKey,
+            senderBlessing: sender_blessing3.publicKey,
 
-    //         masterEdition: masterEditionAddress,
-    //         metadata: metadataAddress,
+            masterEdition: masterEditionAddress,
+            metadata: metadataAddress,
 
-    //         mint: mintKeypair.publicKey,
-    //         tokenAccount: tokenAddress,
-    //         mintAuthority: sender,
-    //         tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+            mint: mintKeypair.publicKey,
+            tokenAccount: tokenAddress,
+            mintAuthority: sender,
+            tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
 
-    //     }).signers([claimer_blessing2, mintKeypair]).rpc()
+        }).signers([claimer_blessing2, mintKeypair]).rpc()
 
-    //     claimer2Balance = await provider.connection.getBalance(claimer2.publicKey);
-    //     console.log('claimer2', claimer2Balance / LAMPORTS_PER_SOL)
+        claimer2Balance = await provider.connection.getBalance(claimer2.publicKey);
+        console.log('claimer2', claimer2Balance / LAMPORTS_PER_SOL)
 
-    //     let senderBlessingBalance = await provider.connection.getBalance(sender_blessing3.publicKey);
-    //     console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
+        let senderBlessingBalance = await provider.connection.getBalance(sender_blessing3.publicKey);
+        console.log('senderBlessingBalance', senderBlessingBalance / LAMPORTS_PER_SOL)
 
-    //     const sender_blessing_res = await program.account.senderBlessing.fetch(sender_blessing3.publicKey);
-    //     console.log('sender_blessing_res:', sender_blessing_res)
+        const sender_blessing_res = await program.account.senderBlessing.fetch(sender_blessing3.publicKey);
+        console.log('sender_blessing_res:', sender_blessing_res)
 
-    //     const claimerblessings = await program.account.claimerBlessing.all();
-    //     console.log('claimerblessings:', claimerblessings)
+        const claimerblessings = await program.account.claimerBlessing.all();
+        console.log('claimerblessings:', claimerblessings)
 
-    // })
+    })
 
 
 });

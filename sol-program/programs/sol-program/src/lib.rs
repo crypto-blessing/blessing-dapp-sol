@@ -6,11 +6,10 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("2tHZEpRNAW7a4NLqiyYC6G9xwySHbDs4CS6SnAiHux4F");
+declare_id!("7SAgeY5ywEh6RaZDvo1t8Gwy23ZdTbk9taL6LMgtYdvz");
 
 #[program]
 pub mod sol_program {
-    use anchor_spl::token::Mint;
 
     use super::*;
 

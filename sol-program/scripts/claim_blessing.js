@@ -22,7 +22,7 @@ describe('crypto-blessing', () => {
         const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
             "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         );
-
+        const claimerBlessing = anchor.web3.Keypair.generate();
         const mintKeypair = anchor.web3.Keypair.generate();
 
         const tokenAddress = await anchor.utils.token.associatedAddress({
@@ -55,14 +55,13 @@ describe('crypto-blessing', () => {
         console.log(`Master edition metadata initialized, masterEditionAddress: ${masterEditionAddress}`);
 
         const testNftTitle = "CryptoBlessing";
-        const testNftSymbol = "CBNFT";
         const testNftUri = "https://raw.githubusercontent.com/crypto-blessing/blessing-dapp-sol/main/sol-program/assets/cbnft_meta.json";
 
         await program.methods.claimBlessing(
-            testNftTitle, testNftUri, "87acwQxCgjyiX3z7nXRSSvC9H9jb6cAyfZYWnJBBQASf"
+            testNftTitle, testNftUri, "6KinegCznGPbwNqcYFqpT9vXr59CXkEgXkWoYEJ4mtNa"
         ).accounts({
             claimerBlessing: mintKeypair.publicKey,
-            senderBlessing: new anchor.web3.PublicKey("3ruRzw36VYLAJiPDRsX7b241Z9dJR5YiVZ2cKi9HsBjo"),
+            senderBlessing: new anchor.web3.PublicKey("QejfLcxjifuQqkyaqpJbWfXcvHdfTH98k9zzH5QhVp6"),
 
             masterEdition: masterEditionAddress,
             metadata: metadataAddress,
